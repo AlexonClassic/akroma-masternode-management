@@ -7,7 +7,7 @@ isValidUsername() {
   return 0 
 }
 
-# Logic to handle arguments for optionally creating systemd service
+REMOVE=false
 SYSTEMD=false
 RPCPORT=8545
 SUCCESS=0
@@ -15,6 +15,11 @@ SUCCESS=0
 for i in "$@"
 do
 case $i in
+    -r|--remove)
+    REMOVE=true
+    break
+    shift # past argument=value
+    ;;
     -s|--systemd)
     SYSTEMD=true
     shift # past argument=value
@@ -28,6 +33,7 @@ case $i in
     shift # past argument=value
     ;;
     -h|--help)
+    echo '-r or --remove option will remove and reverse installation of the akroma masternode client'
     echo '-s or --systemd will create a systemd service for starting and stopping the masternode instance'
     echo '-p=port# or --rpcport=port# option to set specific port# for geth rpc to listen on (option will only be used if systemd service is created)'
     echo '-u=user# or --user=user# option to set/create user to run geth (for default user "akroma" use only -u/--user)'
@@ -53,6 +59,17 @@ case $i in
     ;;
 esac
 done
+
+if [ "$REMOVE" = true ]; then
+echo '=========================='
+echo 'Removing masternode installation...'
+echo '=========================='
+    if [ -f /etc/systemd/system/akromanode.service ]; then
+        sudo systemctl stop akromanode && sudo systemctl disable akromanode && sudo rm /etc/systemd/system/akromanode.service
+    fi
+    sudo rm /usr/sbin/geth
+    exit 0
+fi
 
 echo '=========================='
 echo 'Installing dependencies...'
