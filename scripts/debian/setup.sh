@@ -81,8 +81,19 @@ echo '=========================='
 echo 'Installing akroma node...'
 echo '=========================='
 # Download release zip for node
-if [ $(uname -m) = 'x86_64' ]; then
+arch = $(uname -m) 
+if [ "$arch" = 'x86_64' ]; then
   wget -q --show-progress https://github.com/akroma-project/akroma/releases/download/0.0.8/release.linux-amd64.0.0.8.zip
+elif [ "$arch" = 'armv5l' ]; then
+  wget -q --show-progress https://github.com/akroma-project/akroma/releases/download/0.0.8/release.linux-arm-5.0.0.8.zip
+elif [ "$arch" = 'armv6l' ]; then
+  wget -q --show-progress https://github.com/akroma-project/akroma/releases/download/0.0.8/release.linux-arm-6.0.0.8.zip
+elif [ "$arch" = 'armv7l' ]; then
+  wget -q --show-progress https://github.com/akroma-project/akroma/releases/download/0.0.8/release.linux-arm-7.0.0.8.zip
+elif [ "$arch" = 'armv8l' ]; then
+  wget -q --show-progress https://github.com/akroma-project/akroma/releases/download/0.0.8/release.linux-arm-8.0.0.8.zip
+elif [ "$arch" = 'aarch64' ]; then
+  wget -q --show-progress https://github.com/akroma-project/akroma/releases/download/0.0.8/release.linux-arm-64.0.0.8.zip
 else
   wget -q --show-progress https://github.com/akroma-project/akroma/releases/download/0.0.8/release.linux-386.0.0.8.zip
 fi
