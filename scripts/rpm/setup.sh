@@ -28,7 +28,7 @@ case $i in
     shift # past argument=value
     ;;
     -h|--help)
-    echo '-s=true or --systemd=true will create a systemd service for starting and stopping the masternode instance'
+    echo '-s or --systemd will create a systemd service for starting and stopping the masternode instance'
     echo '-p=port# or --rpcport=port# option to set specific port# for geth rpc to listen on (option will only be used if systemd service is created)'
     echo '-u=user# or --user=user# option to set/create user to run geth (for default user "akroma" use only -u/--user)'
     exit 1
@@ -95,14 +95,14 @@ fi
 
 
 if [ "$SYSTEMD" = true ]; then
-    if [ -f /etc/systemd/system/masternode.service ]; then
-        sudo systemctl stop masternode && sudo systemctl disable masternode && sudo rm /etc/systemd/system/masternode.service
+    if [ -f /etc/systemd/system/akromanode.service ]; then
+        sudo systemctl stop akromanode && sudo systemctl disable akromanode && sudo rm /etc/systemd/system/akromanode.service
     fi
 echo '=========================='
 echo 'Configuring service...'
 echo '=========================='
 
-cat > /tmp/masternode.service << EOL
+cat > /tmp/akromanode.service << EOL
 [Unit]
 Description=Akroma Client -- masternode service
 After=network.target
@@ -111,13 +111,13 @@ After=network.target
 EOL
 
 if [ "$CREATE_USER" = true ] ; then
-  cat >> /tmp/masternode.service << EOL
+  cat >> /tmp/akromanode.service << EOL
 User=${USERNAME}
 Group=${USERNAME}
 EOL
 fi
 
-cat >> /tmp/masternode.service << EOL
+cat >> /tmp/akromanode.service << EOL
 Type=simple
 Restart=always
 RestartSec=30s
@@ -126,9 +126,9 @@ ExecStart=/usr/sbin/geth --masternode --rpcport ${RPCPORT}
 [Install]
 WantedBy=default.target
 EOL
-        sudo mv /tmp/masternode.service /etc/systemd/system
+        sudo mv /tmp/akromanode.service /etc/systemd/system
         sudo cp geth /usr/sbin/
-        systemctl status masternode --no-pager --full
+        systemctl status akromanode --no-pager --full
 else
   echo 'systemd service will not be created.'
 fi
