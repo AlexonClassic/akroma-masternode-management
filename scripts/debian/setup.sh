@@ -81,7 +81,7 @@ echo '=========================='
 echo 'Installing akroma node...'
 echo '=========================='
 # Download release zip for node
-arch = $(uname -m) 
+arch=$(uname -m) 
 if [ "$arch" = 'x86_64' ]; then
   wget -q --show-progress https://github.com/akroma-project/akroma/releases/download/0.0.8/release.linux-amd64.0.0.8.zip
 elif [ "$arch" = 'armv5l' ]; then
