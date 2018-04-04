@@ -112,7 +112,7 @@ if [ "$CREATE_USER" = true ] ; then
   echo "User configuration."
   echo '=========================='
 
-  grep -q "$username" /etc/passwd
+  grep -q "$USERNAME" /etc/passwd
   if [ $? -ne $SUCCESS ] ; then 
      echo "Creating user $USERNAME." 
      sudo adduser $USERNAME --gecos "" --disabled-password
