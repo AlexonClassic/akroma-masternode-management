@@ -7,6 +7,7 @@ isValidUsername() {
     return 0 
 }
 
+VERSION='0.1.0'
 REMOVE=false
 SYSTEMD=false
 RPCPORT=8545
@@ -118,29 +119,29 @@ echo '=========================='
 # Download release zip for node
 arch=$(uname -m) 
 if [ "$arch" = 'x86_64' ]; then
-    wget https://github.com/akroma-project/akroma/releases/download/0.1.0/release.linux-amd64.0.1.0.zip
+    wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-amd64.$VERSION.zip
 elif [ "$arch" = 'armv5l' ]; then
-    wget https://github.com/akroma-project/akroma/releases/download/0.1.0/release.linux-arm-5.0.1.0.zip
+    wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-arm-5.$VERSION.zip
 elif [ "$arch" = 'armv6l' ]; then
-    wget https://github.com/akroma-project/akroma/releases/download/0.1.0/release.linux-arm-6.0.1.0.zip
+    wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-arm-6.$VERSION.zip
 elif [ "$arch" = 'armv7l' ]; then
-    wget https://github.com/akroma-project/akroma/releases/download/0.1.0/release.linux-arm-7.0.1.0.zip
+    wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-arm-7.$VERSION.zip
 elif [ "$arch" = 'armv8l' ]; then
-    wget https://github.com/akroma-project/akroma/releases/download/0.1.0/release.linux-arm-8.0.1.0.zip
+    wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-arm-8.$VERSION.zip
 elif [ "$arch" = 'aarch64' ]; then
-    wget https://github.com/akroma-project/akroma/releases/download/0.1.0/release.linux-arm-64.0.1.0.zip
+    wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-arm-64.$VERSION.zip
 else
-    wget https://github.com/akroma-project/akroma/releases/download/0.1.0/release.linux-386.0.1.0.zip
+    wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-386.$VERSION.zip
 fi
 
 # Unzip release zip file
-unzip -o release.linux-*0.1.0.zip
+unzip -o release.linux-*$VERSION.zip
 
 # Make `geth` executable
 chmod +x geth
 
 # Cleanup
-rm release.linux-*0.1.0.zip
+rm release.linux-*$VERSION.zip
 
 if [ "$SYSTEMD" = true ]; then
     if [ -f /etc/systemd/system/masternode.service ]; then
