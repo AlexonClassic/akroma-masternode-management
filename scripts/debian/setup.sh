@@ -7,7 +7,8 @@ isValidUsername() {
     return 0 
 }
 
-VERSION='0.1.0'
+VERSION='0.1.1'
+MEMORY=false
 REMOVE=false
 SYSTEMD=false
 RPCPORT=8545
@@ -18,6 +19,11 @@ SUCCESS=0
 for i in "$@"
 do
 case $i in
+    -m|--memory)
+    MEMORY=true
+    break
+    shift # past argument=value
+    ;;
     -r|--remove)
     REMOVE=true
     break
@@ -119,6 +125,7 @@ echo '=========================='
 # Download release zip for node
 arch=$(uname -m) 
 if [ "$arch" = 'x86_64' ]; then
+    sudo apt-get install jemalloc -y
     wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-amd64.$VERSION.zip
 elif [ "$arch" = 'armv5l' ]; then
     wget https://github.com/akroma-project/akroma/releases/download/$VERSION/release.linux-arm-5.$VERSION.zip
@@ -173,6 +180,15 @@ cat >> /tmp/akromanode.service << EOL
 Type=simple
 Restart=always
 RestartSec=30s
+EOL
+if [ "$MEMORY" = true ] && [ "$arch" = 'x86_64' ]
+then
+    cat >> /tmp/akromanode.service << EOL
+Environment="LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.1"
+EOL
+fi
+
+cat >> /tmp/akromanode.service << EOL
 ExecStart=/usr/sbin/geth --masternode --rpcport ${RPCPORT} --rpcuser ${RPCUSER} --rpcpassword ${RPCPASSWORD}
 
 [Install]
