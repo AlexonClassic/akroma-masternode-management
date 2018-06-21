@@ -197,6 +197,7 @@ WantedBy=default.target
 EOL
         sudo \mv /tmp/akromanode.service /etc/systemd/system
         sudo \cp geth /usr/sbin/
+        sudo systemctl enable akromanode && systemctl start akromanode
         systemctl status akromanode --no-pager --full
 else
     echo 'systemd service will not be created.'
