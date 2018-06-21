@@ -52,6 +52,7 @@ case $i in
     -h|--help)
     echo '-r or --remove option will remove and reverse installation of the akroma masternode client'
     echo '-s or --systemd will create a systemd service for starting and stopping the masternode instance'
+    echo '-m or --memory will use alternate memory manager for less memory usage and faster block syncs (USE AT YOUR OWN RISK!)'
     echo '-p=port# or --rpcport=port# option to set specific port# for geth rpc to listen on (option will only be used if systemd service is created)'
     echo '--rpcuser=user# option to set specific rpc user defined within Akroma dashboard (option will only be used if systemd service is created)'
     echo '--rpcpassword=password# option to set specific rpc password defined within Akroma dashboard (option will only be used if systemd service is created)'
