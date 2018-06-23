@@ -4,7 +4,14 @@ isValidUsername() {
     if echo $1 | grep -Eq '^[[:lower:]_][[:lower:][:digit:]_-]{2,15}$'; then
         return 1
     fi
-    return 0 
+    return 0
+}
+
+isValidRPCInfo() {
+    if echo $1 | grep -Eq '^[a-zA-Z0-9]{3,15}$'; then
+        return 1
+    fi
+    return 0
 }
 
 VERSION='0.1.1'
@@ -21,7 +28,6 @@ do
 case $i in
     -m|--memory)
     MEMORY=true
-    break
     shift # past argument=value
     ;;
     -r|--remove)
@@ -43,10 +49,20 @@ case $i in
     ;;
     --rpcuser=*)
     RPCUSER="${i#*=}"
+    isValidRPCInfo $RPCUSER
+    if [ "$?" -eq 0 ] ; then
+        echo 'Please provide valid rpcuser/password.'
+        exit 2
+    fi
     shift # past argument=value
     ;;
     --rpcpassword=*)
     RPCPASSWORD="${i#*=}"
+    isValidRPCInfo $RPCPASSWORD
+    if [ "$?" -eq 0 ] ; then
+        echo 'Please provide valid rpcuser/password.'
+        exit 2
+    fi
     shift # past argument=value
     ;;
     -h|--help)
@@ -54,8 +70,8 @@ case $i in
     echo '-s or --systemd will create a systemd service for starting and stopping the masternode instance'
     echo '-m or --memory will use alternate memory manager for less memory usage and faster block syncs (USE AT YOUR OWN RISK!)'
     echo '-p=port# or --rpcport=port# option to set specific port# for geth rpc to listen on (option will only be used if systemd service is created)'
-    echo '--rpcuser=user# option to set specific rpc user defined within Akroma dashboard (option will only be used if systemd service is created)'
-    echo '--rpcpassword=password# option to set specific rpc password defined within Akroma dashboard (option will only be used if systemd service is created)'
+    echo '--rpcuser=user# option to set specific rpc user to be defined within Akroma dashboard (option will only be used if systemd service is created)'
+    echo '--rpcpassword=password# option to set specific rpc password to be defined within Akroma dashboard (option will only be used if systemd service is created)'
     echo '-u=user# or --user=user# option to set/create user to run geth (for default user "akroma" use only -u/--user)'
     exit 1
     ;;
@@ -94,7 +110,7 @@ echo '=========================='
     exit 0
 fi
 
-if [ -z "$RPCUSER" ] || [ -z "$RPCPASSWORD" ]
+if [ ! -z "$RPCUSER" -a -z "$RPCPASSWORD" ] || [ -z "$RPCUSER" -a ! -z "$RPCPASSWORD" ]
 then
     echo '--rpcuser and --rpcpassword must be defined.  You can obtain these from the Akroma dashboard for this MasterNode'
     exit 2
@@ -189,8 +205,17 @@ Environment="LD_PRELOAD=/usr/lib64/libjemalloc.so.1"
 EOL
 fi
 
+if [ ! -z "$RPCUSER" ] ; then
+    cat >> /tmp/akromanode.service << EOL
+ExecStart=/usr/sbin/geth --masternode --rpcport ${RPCPORT} --rpcvhosts * --rpcuser ${RPCUSER} --rpcpassword ${RPCPASSWORD}
+EOL
+else
+    cat >> /tmp/akromanode.service << EOL
+ExecStart=/usr/sbin/geth --masternode --rpcport ${RPCPORT} --rpcvhosts *
+EOL
+fi
+
 cat >> /tmp/akromanode.service << EOL
-ExecStart=/usr/sbin/geth --masternode --rpcport ${RPCPORT} --rpcuser ${RPCUSER} --rpcpassword ${RPCPASSWORD}
 
 [Install]
 WantedBy=default.target
