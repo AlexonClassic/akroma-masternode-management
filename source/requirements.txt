@@ -1,0 +1,6 @@
+pyinstaller
+python-crontab
+subprocess32
+requests>=2.19.1
+retrying
+zipfile2
