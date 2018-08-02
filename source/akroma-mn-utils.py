@@ -9,7 +9,7 @@ from lib.api import get_script_versions
 from lib.utils import service_status, timed_run
 
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 def main():
     parser = argparse.ArgumentParser()
@@ -52,15 +52,13 @@ def main():
     geth_versions = get_script_versions(GETH_VERSIONS_URI, 'geth version')
 
     # Check if node port is accessible
-    NODE_PORT_ACCESSIBLE = False
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(5)
         ret = sock.connect((NODE_IP, NODE_PORT))
-        if ret == 0:
-            NODE_PORT_ACCESSIBLE = True
+        NODE_PORT_ACCESSIBLE = True
     except Exception:
-        pass
+        NODE_PORT_ACCESSIBLE = False
 
     # Get akromanode debug journal data
     if SYSTEMD_INUSE:
@@ -74,7 +72,7 @@ def main():
     if ENODE_ID == 'Unknown':
         print("\tConsider issuing `systemctl restart akromanode` and re-running utils")
     print("Node IP: %s" % NODE_IP)
-    print("Node Port: %d" % NODE_PORT)
+    print("Node Port: %s" % NODE_PORT)
     if NODE_IP == 'Unknown':
         print("\tConsider issuing `systemctl restart akromanode` and re-running utils")
     print("Geth Versions:")
