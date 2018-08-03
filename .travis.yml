@@ -14,5 +14,4 @@ before_install:
   - sudo docker pull centos:centos${OS_VERSION}
 
 script:
- # Run install of dependencies in CentOS Container
-- yum install epel-release yum install gcc python2-devel python-pip upx
+- build/rhel/build.sh
