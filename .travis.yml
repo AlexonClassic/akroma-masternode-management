@@ -14,4 +14,5 @@ before_install:
   - sudo docker pull centos:centos${OS_VERSION}
 
 script:
+- chmod +x build/rhel/build.sh
 - build/rhel/build.sh
