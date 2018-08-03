@@ -10,7 +10,7 @@ echo "Line 9"
 docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "yum install epel-release yum install gcc python2-devel python-pip upx -y;
   echo -ne \"------\nEND DEPENDENCIES INSTALL\n\";"
 echo "Line 12"
-docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "ls -lah; pip install -r source/requirements.txt;
+docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "/usr/local/bin/pip install -r /akroma-masternode-management/source/requirements.txt;
   echo -ne \"------\nEND PIP REQUIREMENTS INSTALL\n\";"
 echo "Line 15"
 docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "pyinstaller --onefile --noconfirm --clean --log-level=WARN --strip --runtime-tmpdir /dev/shm akroma-mn-setup.py;
