@@ -2,8 +2,6 @@
 
 # This script starts docker and systemd on el7
 
-yum install epel-release yum install gcc python2-devel python-pip upx
-
 docker run --privileged -d -ti -e "container=docker"  -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/htcondor-ce:rw  centos:centos${OS_VERSION}   /usr/sbin/init
 DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
 docker logs $DOCKER_CONTAINER_ID
