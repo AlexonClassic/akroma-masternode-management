@@ -9,7 +9,7 @@ docker logs $DOCKER_CONTAINER_ID
 echo "Line 9"
 docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "yum --enablerepo=extras install epel-release -y && yum --enablerepo=extras install gcc python2-devel python-pip upx -y && echo -ne \"------\nEND DEPENDENCIES INSTALL\n\";"
 echo "Line 12"
-docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "find / -name *pip* ; /usr/bin/pip install -r /akroma-masternode-management/source/requirements.txt &&
+docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "find / -name requirements.txt ; pip install -r /akroma-masternode-management/source/requirements.txt &&
   echo -ne \"------\nEND PIP REQUIREMENTS INSTALL\n\";"
 echo "Line 15"
 docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "pyinstaller --onefile --noconfirm --clean --log-level=WARN --strip --runtime-tmpdir /dev/shm akroma-mn-setup.py &&
