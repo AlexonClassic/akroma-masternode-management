@@ -13,6 +13,12 @@ before_install:
   - sleep 5
   - sudo docker pull centos:centos${OS_VERSION}
 
+install:
+  - chmod +x build/install-dependencies.sh
+  - build/install-dependencies.sh
+
 script:
-- chmod +x build/rhel/build.sh
-- build/rhel/build.sh
+  - chmod +x build/build-setup.sh
+  - build/build-setup.sh
+  - chmod +x build/build-utils.sh
+  - build/build-utils.sh
