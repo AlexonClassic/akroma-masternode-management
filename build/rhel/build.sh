@@ -7,7 +7,7 @@ docker run --privileged -d -ti -e "container=docker"  -v /sys/fs/cgroup:/sys/fs/
 DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
 docker logs $DOCKER_CONTAINER_ID
 echo "Line 9"
-docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "yum --enablerepo=extras install epel-release 
+docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "yum --enablerepo=extras install epel-release -y 
   && yum --enablerepo=extras install gcc python2-devel python-pip upx -y 
   && echo -ne \"------\nEND DEPENDENCIES INSTALL\n\";"
 echo "Line 12"
