@@ -22,3 +22,7 @@ script:
   - build/build-setup.sh
   - chmod +x build/build-utils.sh
   - build/build-utils.sh
+
+after_script:
+  - chmod +x build/after-build.sh
+  - build/after-build.sh
