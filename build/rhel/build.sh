@@ -12,10 +12,10 @@ echo "Line 12"
 docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "find / -name requirements.txt ; pip install -r /akroma-masternode-management/source/requirements.txt &&
   echo -ne \"------\nEND PIP REQUIREMENTS INSTALL\n\";"
 echo "Line 15"
-docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "pyinstaller --onefile --noconfirm --clean --log-level=WARN --strip --runtime-tmpdir /dev/shm akroma-mn-setup.py &&
+docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "cd /akroma-masternode-management/source && pyinstaller --onefile --noconfirm --clean --log-level=WARN --strip --runtime-tmpdir /dev/shm akroma-mn-setup.py &&
   echo -ne \"------\nEND akroma-mn-setup BUILD\n\";"
 echo "Line 18"
-docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "pyinstaller --onefile --noconfirm --clean --log-level=WARN --strip --runtime-tmpdir /dev/shm akroma-mn-utils.py &&
+docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -xec "cd /akroma-masternode-management/source && pyinstaller --onefile --noconfirm --clean --log-level=WARN --strip --runtime-tmpdir /dev/shm akroma-mn-utils.py &&
   echo -ne \"------\nEND akroma-mn-utils BUILD\n\";"
 echo "Line 21"
 docker ps -a
