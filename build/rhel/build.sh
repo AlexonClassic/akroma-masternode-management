@@ -3,7 +3,7 @@
 # This script starts docker and systemd on el7
 
 echo "Line 5"
-docker run --privileged -d -ti -e "container=docker"  -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/akroma-masternode-managememt:rw  centos:centos${OS_VERSION}   /usr/sbin/init
+docker run --privileged -d -ti -e "container=docker"  -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/akroma-masternode-management:rw  centos:centos${OS_VERSION}   /usr/sbin/init
 DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
 docker logs $DOCKER_CONTAINER_ID
 echo "Line 9"
