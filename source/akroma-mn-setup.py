@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Akroma MasterNode Setup and Auto-Update
+"""Akroma MasterNode Setup and Auto-Update"""
 
 import argparse
 import os
@@ -12,7 +12,13 @@ GETH_URI = 'https://github.com/akroma-project/akroma/releases/download'
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
 SCRIPTS_URI = 'https://github.com/akroma-project/akroma-masternode-management/releases/download/'
 SCRIPTS_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma-masternode-management/master/versions.json'
-VERSION = '0.0.2'
+VERSION = '0.0.3'
+
+# OS and Version compatibility matrix (Major version)
+COMPAT_MATRIX = {'CentOS': [7],
+                 'Debian': [9],
+                 'Ubuntu': [16, 18],
+                }
 
 class NegateAction(argparse.Action):
     """
@@ -22,6 +28,7 @@ class NegateAction(argparse.Action):
         setattr(ns, self.dest, option[2:4] != 'no')
 
 def main():
+    """Main"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--interactive", help="Interactively install/upgrade akromanode (NOT YET IMPLEMENTED)", action='store_true')
     parser.add_argument("-g", "--geth", help="Geth version to use (Default: stable)", type=str, choices=['latest', 'stable'], default=None)
@@ -39,20 +46,23 @@ def main():
 
     # Display script version
     if args.version:
-        print("Version: %s" % VERSION)
+        print "Version: %s" % VERSION
         sys.exit(0)
 
-    os_family, arch = utils.os_detect() # Get the OS family (ie, Debian or RedHat) and machine architecture
+    os_name, os_family, os_ver, os_arch = utils.os_detect() # Get the OS, OS family (ie, Debian or RedHat),  OS version, and machine architecture
+    if os_name not in COMPAT_MATRIX or os_ver not in COMPAT_MATRIX[os_name]:
+        print "Unsupported OS and/or version.  Please refer to installation guide for supported OS and version"
+        sys.exit(2)
 
     # Remove Akroma MasterNode
     if args.remove:
-        print("Removing masternode installation...")
+        print "Removing masternode installation..."
         for service in ('akromanode', 'masternode'):
             f = '/etc/systemd/system/%s.service' % service
             if os.path.isfile(f):
                 for status in ('stop', 'disable'):
                     if not utils.service_status(service, status):
-                        raise Exception("ERROR: Failed to %s %s service" % (syscall, service))
+                        raise Exception("ERROR: Failed to %s %s service" % (status, service))
                 # If service file was a symlink, systemctl would have removed it
                 # Check if the file still exists
                 if os.path.isfile(f):
@@ -66,18 +76,19 @@ def main():
         sys.exit(0)
 
     # Migrate old masternode service to akromanode
+    restart_service = False
     if utils.service_status('masternode', 'is-active'):
-        print("==========================\nMigrating masternode service...\n==========================")
+        print "==========================\nMigrating masternode service...\n=========================="
         if utils.service_status('masternode', 'stop'):
             os.rename('/etc/systemd/system/masternode.service', '/etc/systemd/system/akromanode.service')
             ret, _ = utils.timed_run('systemctl daemon-reload')
             if ret is None or int(ret) != 0:
                 raise Exception('ERROR: Migration of masternode service failed')
+            restart_service = True
         else:
             raise Exception('ERROR: Failed to stop masternode service')
 
     geth_versions = api.get_script_versions(GETH_VERSIONS_URI, 'geth version') # Get current geth version, and those returned by API
-    restart_service = False
     service_file = utils.parse_service_file(args) # Parse akromanode.service, if it exists, and override defaults
     new_service_file = """[Unit]
 Description=Akroma Client -- masternode service
@@ -99,13 +110,13 @@ After=network.target
     # Create/verify user to run akromanode exists
     if args.user:
         new_service_file += "User={0}\nGroup={0}\n".format(args.user)
-        print("==========================\nUser configuration.\n==========================")
+        print "==========================\nUser configuration.\n=========================="
         try:
             pwd.getpwnam(args.user)
-            print("User %s found." % args.user)
+            print "User %s found." % args.user
         except KeyError:
             if os_family in ('Debian', 'RedHat'):
-                print("Creating user %s." % args.user)
+                print "Creating user %s." % args.user
                 if os_family == 'RedHat':
                     ret, _ = utils.timed_run('adduser -r %s -s /bin/false -b /home -m' % args.user)
                 else:
@@ -113,13 +124,13 @@ After=network.target
                 if ret is None or int(ret) != 0:
                     raise Exception("ERROR: Failed to create user %s" % args.user)
             else:
-                print("Unsupported OS for user management.  Manually create desired user to run akromanode as.")
+                print "Unsupported OS for user management.  Manually create desired user to run akromanode as."
 
     new_service_file += "Type=simple\nRestart=always\nRestartSec=30s\n"
 
     # Install OS Family specific dependencies
     if os_family in ('Debian', 'RedHat'):
-        print("==========================\nInstalling dependencies...\n==========================")
+        print "==========================\nInstalling dependencies...\n=========================="
         if os_family == 'RedHat':
             ret, _ = utils.timed_run('yum -d1 -y install curl')
         else:
@@ -127,12 +138,12 @@ After=network.target
         if ret is None or int(ret) != 0:
             raise Exception("ERROR: Failed to install curl")
     else:
-        print("Unsupported OS.  Manually install curl package.")
+        print "Unsupported OS.  Manually install curl package."
 
     # Install alternate memory manager, if True
     if args.memory:
         if os_family in ('Debian', 'RedHat'):
-            print("==========================\nInstalling jemalloc...\n==========================")
+            print "==========================\nInstalling jemalloc...\n=========================="
             if os_family == 'RedHat':
                 new_service_file += 'Environment="LD_PRELOAD=/usr/lib64/libjemalloc.so.1"\n'
                 ret, _ = utils.timed_run('yum -d1 -y install jemalloc')
@@ -142,7 +153,7 @@ After=network.target
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to install jemalloc")
         else:
-            print("Unsupported OS for alternate memory manager.")
+            print "Unsupported OS for alternate memory manager."
 
     # Install and configure UFW, if True
     if args.ufw:
@@ -158,7 +169,7 @@ After=network.target
                          'ufw --force enable',
                          'ufw status'
                         ]
-            print("==========================\nInstalling/configuring ufw...\n==========================")
+            print "==========================\nInstalling/configuring ufw...\n=========================="
             if os_family == 'RedHat':
                 ret, _ = utils.timed_run('yum -d1 -y install ufw')
             else:
@@ -172,7 +183,7 @@ After=network.target
             utils.service_status('ufw', 'enable')
             utils.service_status('ufw', 'start')
         else:
-            print("Unsupported OS for UFW.")
+            print "Unsupported OS for UFW."
 
     # Determine if geth version needs to be updated
     if geth_versions['current'] == 'Unknown' or geth_versions['current'] < geth_versions['stable']:
@@ -184,8 +195,8 @@ After=network.target
 
     # If geth version update required, download and install new version
     if args.geth:
-        print("==========================\nInstalling/upgrading geth %s...\n==========================" % geth_versions[args.geth])
-        if not api.download_geth(os_family, arch, geth_versions[args.geth], GETH_URI):
+        print "==========================\nInstalling/upgrading geth %s...\n==========================" % geth_versions[args.geth]
+        if not api.download_geth(os_family, os_arch, geth_versions[args.geth], GETH_URI):
             raise Exception('ERROR: Failed to download geth')
         restart_service = True
 
@@ -199,7 +210,7 @@ After=network.target
 
     # If auto-generated service file != on-disk service file, rewrite it
     if service_file != new_service_file:
-        print("==========================\nCreating/updating akromanode service file...\n==========================")
+        print "==========================\nCreating/updating akromanode service file...\n=========================="
         with open('/etc/systemd/system/akromanode.service', 'w') as fd:
             fd.write(new_service_file)
         ret, _ = utils.timed_run('systemctl daemon-reload')
@@ -209,17 +220,17 @@ After=network.target
 
     # Enable and restart akromanode if service or geth updates have been made
     if not utils.service_status('akromanode', 'is-active') or restart_service:
-        print("==========================\nEnabling and (re)starting akromanode service...\n==========================")
+        print "==========================\nEnabling and (re)starting akromanode service...\n=========================="
         utils.service_status('akromanode', 'enable')
         utils.service_status('akromanode', 'restart')
 
     # Enable auto-update and update scripts
     script_versions = api.get_script_versions(SCRIPTS_VERSIONS_URI, 'akroma-mn-setup -v') # Get current setup version, and those returned by API
     if script_versions['current'] != script_versions['stable']:
-        api.autoupdate_scripts(arch, script_versions['stable'], SCRIPTS_URI)
+        api.autoupdate_scripts(os_arch, script_versions['stable'], SCRIPTS_URI)
     utils.autoupdate_cron(os_family)
 
-    print("==========================\nAkroma MasterNode up-to-date...\n==========================")
+    print "==========================\nAkroma MasterNode up-to-date...\n=========================="
 
 if __name__ == '__main__':
     main()

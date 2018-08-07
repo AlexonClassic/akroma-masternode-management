@@ -21,13 +21,17 @@ Howto
    CentOS/RHEL requires the following to be installed prior to running:
 
     yum install epel-release
-    yum install gcc python2-devel python-pip upx
+    yum install gcc python2-devel python-pip python-setuptools upx
 
    -- or --
 
    Debian/Ubuntu requires the following to be installed prior to running:
 
-    apt-get install gcc python-dev python-pip upx
+    apt-get install gcc python-dev python-pip python-setuptools upx
+
+   For 32-bit, you may need to manually download pip from https://pypi.org/project/pip/
+
+   Also, upx may not be available for all 32-bit OS', causing binaries to be uncompressed
 
 2. Install python requirements::
 

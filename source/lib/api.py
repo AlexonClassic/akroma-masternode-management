@@ -5,7 +5,7 @@ Interface to interact with requests
 import json
 import os
 import StringIO
-from zipfile import ZipFile
+import zipfile
 import requests
 from retrying import retry
 import lib.utils as utils
@@ -19,7 +19,7 @@ def autoupdate_scripts(arch, version, url):
     for f in ('akroma-mn-setup', 'akroma-mn-utils'):
         ret = HttpRetry().run('GET', url=url + f + '.' + arch)
         if ret.status_code != 200:
-            print("ERROR: Failed to update %s" % f)
+            print "ERROR: Failed to update %s" % f
         else:
             f = path + f
             # Need to remove binary before replacing it
@@ -29,7 +29,7 @@ def autoupdate_scripts(arch, version, url):
             data.write(ret.content)
             data.seek(0)
             with open(f, 'w') as fd:
-                print("==========================\nUpdating %s...\n==========================" % f)
+                print "==========================\nUpdating %s...\n==========================" % f
                 fd.write(data.read())
                 os.chmod(f, 0755)
 
@@ -42,7 +42,7 @@ def download_geth(os_family, arch, version, url):
         if os_family in ('Debian', 'RedHat'):
             url += 'amd64'
         else:
-            print("Unsupported OS for geth.  You may need to setup akromanode manually.")
+            print "Unsupported OS for geth.  You may need to setup akromanode manually."
             return False
     elif arch == 'armv5l':
         url += 'arm-5'
@@ -54,10 +54,14 @@ def download_geth(os_family, arch, version, url):
         url += 'arm-8'
     elif arch == 'aarch64':
         url += 'arm-64'
-    elif arch == 'i386':
-        url += '386'
+    elif arch == 'i686':
+        if os_family in ('Debian', 'RedHat'):
+            url += '386'
+        else:
+            print "Unsupported OS for geth.  You may need to setup akromanode manually."
+            return False
     else:
-        print("Unsupported OS for geth.  You may need to setup akromanode manually.")
+        print "Unsupported OS for geth.  You may need to setup akromanode manually."
         return False
     url += '.%s.zip' % version
 
@@ -74,10 +78,10 @@ def extract_zip(url, directory):
     Download zip file, in memory, and extract to disk
     """
     try:
-        f = ZipFile(StringIO.StringIO(requests.get(url).content))
+        f = zipfile.ZipFile(StringIO.StringIO(requests.get(url).content))
         f.extractall(directory)
         return True
-    except Exception:
+    except zipfile.BadZipfile:
         return False
 
 def get_script_versions(url, cmd):

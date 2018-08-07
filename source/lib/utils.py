@@ -5,14 +5,16 @@ Generic shared utilities
 from itertools import ifilter
 import logging
 import os
-import platform
 import random
 import re
 import shlex
-import sys, tty, termios
+import sys
+import termios
+import tty
 from retrying import retry
 from subprocess32 import STDOUT, PIPE, Popen
 from crontab import CronTab
+import distro
 
 
 def autoupdate_cron(os_family, remove=False):
@@ -22,7 +24,7 @@ def autoupdate_cron(os_family, remove=False):
     if os_family in ('Debian', 'RedHat'):
         cron = CronTab('root')
         if remove:
-            print("==========================\nRemoving Akroma MasterNode auto-update...\n==========================")
+            print "==========================\nRemoving Akroma MasterNode auto-update...\n=========================="
             cron.remove_all(comment='Akroma MasterNode Auto-Update')
             cron.write()
         elif not sum(1 for _ in cron.find_comment('Akroma MasterNode Auto-Update')):
@@ -40,13 +42,13 @@ def autoupdate_cron(os_family, remove=False):
                         res = 'Y'
             finally:
                 termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            print(res)
+            print res
             if res == 'Y':
-                print("==========================\nEnabling Akroma MasterNode auto-update...\n==========================")
+                print "==========================\nEnabling Akroma MasterNode auto-update...\n=========================="
                 job = cron.new(command='/usr/sbin/akroma-mn-setup', comment='Akroma MasterNode Auto-Update')
                 job.setall('%d %d * * *' % (random.randint(0, 59), random.randint(0, 23)))
                 cron.write()
-                print("==========================\nEnabling and starting cron service...\n==========================")
+                print "==========================\nEnabling and starting cron service...\n=========================="
                 if os_family == 'RedHat':
                     ret, _ = timed_run('yum -d1 -y install cronie')
                 else:
@@ -121,7 +123,7 @@ def os_detect():
     """
     Detect os family and architecture
     """
-    _OS_FAMILY_MAP = {
+    _os_family_map = {
         'Debian': 'Debian',
         'RedHat': 'Debian',
         'Ubuntu': 'Debian',
@@ -158,12 +160,13 @@ def os_detect():
         'IDMS': 'Debian',
     }
 
-    os_name = re.sub('\s+Linux$', '', platform.linux_distribution()[0])
+    os_name = re.sub(r'\s+(:?GNU/)?Linux$', '', distro.name())
+    os_ver = distro.major_version()
     regex = re.compile("^%s$" % os_name, re.IGNORECASE)
-    os_name = next(ifilter(regex.match, _OS_FAMILY_MAP), False)
-    if os_name:
-        return _OS_FAMILY_MAP[os_name], platform.machine()
-    return None, platform.machine()
+    os_family = next(ifilter(regex.match, _os_family_map), False)
+    if os_family:
+        return os_name, _os_family_map[os_family], int(os_ver), os.uname()[4]
+    return os_name, None, int(os_ver), os.uname()[4]
 
 def parse_service_file(args):
     """
@@ -194,7 +197,7 @@ def parse_service_file(args):
             if m:
                 if args.rpcpassword is None:
                     args.rpcpassword = m.group(1)
-    except:
+    except IOError:
         pass
 
     if args.memory is None:
@@ -224,7 +227,7 @@ def script_version(cmd):
     ret, out = timed_run(cmd)
     if ret is None or int(ret) != 0:
         return 'Unknown'
-    m = re.search('Version:\s*([\.0-9]+)', out)
+    m = re.search(r'Version:\s*([\.0-9]+)', out)
     if m:
         return str(m.group(1))
     return 'Unknown'

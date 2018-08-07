@@ -1,3 +1,4 @@
+distro
 pyinstaller
 python-crontab
 subprocess32

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Akroma MasterNode Utils
+"""Akroma MasterNode Utils"""
 
 import argparse
 import re
@@ -9,80 +9,80 @@ from lib.api import get_script_versions
 from lib.utils import service_status, timed_run
 
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 
 def main():
+    """Main"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", help="Script Version", action='store_true')
     args = parser.parse_args()
 
     # Display script version
     if args.version:
-        print("Version: %s" % VERSION)
+        print "Version: %s" % VERSION
         sys.exit(0)
 
     # Determine if akromanode service is running
-    SYSTEMD_INUSE = service_status('akromanode', 'is-active')
+    systemd_inuse = service_status('akromanode', 'is-active')
 
     # Get akromanode enode id and node port
-    ENODE_ID = 'Unknown'
-    NODE_PORT = 'Unknown'
-    if SYSTEMD_INUSE:
+    enode_id = 'Unknown'
+    node_port = 'Unknown'
+    if systemd_inuse:
         ret, out = timed_run('journalctl -u akromanode.service')
         if ret is None or int(ret) != 0:
             raise Exception("ERROR: Failed to read akromanode journal data")
-    else:
-        with open('geth.out', 'r') as f:
-            out = f.read().rstrip()
-    m = re.search(r'HTTP endpoint opened\s*url=http:\/\/0.0.0.0:(\d+)\s*', out)
-    if m:
-        NODE_PORT = int(m.group(1))
-    m = re.search(r'UDP listener up\s*self=enode:\/\/(\w+)\@', out)
-    if m:
-        ENODE_ID = str(m.group(1))
+        m = re.search(r'HTTP endpoint opened\s*url=http:\/\/0.0.0.0:(\d+)\s*', out)
+        if m:
+            node_port = int(m.group(1))
+        m = re.search(r'UDP listener up\s*self=enode:\/\/(\w+)\@', out)
+        if m:
+            enode_id = str(m.group(1))
 
     # Get public ip
     ret, out = timed_run('curl --silent -4 icanhazip.com')
     if ret is None or int(ret) != 0:
         raise Exception("ERROR: Failed to obtain node ip")
     else:
-        NODE_IP = str(out)
+        node_ip = str(out)
 
     # Get geth versions
     geth_versions = get_script_versions(GETH_VERSIONS_URI, 'geth version')
 
     # Check if node port is accessible
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(5)
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
-        ret = sock.connect((NODE_IP, NODE_PORT))
-        NODE_PORT_ACCESSIBLE = True
-    except Exception:
-        NODE_PORT_ACCESSIBLE = False
+        if not isinstance(node_port, (int)):
+            raise socket.error
+        ret = sock.connect((node_ip, node_port))
+        node_port_accessible = True
+    except socket.error:
+        node_port_accessible = False
 
     # Get akromanode debug journal data
-    if SYSTEMD_INUSE:
+    if systemd_inuse:
         ret, out = timed_run('journalctl -u akromanode.service -n 20 -p 5')
         if ret is None or int(ret) != 0:
-            print("ERROR: Failed to read akromanode journal data")
+            print "ERROR: Failed to read akromanode journal data"
         else:
-            JOURNAL_DATA = str(out)
+            journal_data = str(out)
 
-    print("Enode Id: %s" % ENODE_ID)
-    if ENODE_ID == 'Unknown':
-        print("\tConsider issuing `systemctl restart akromanode` and re-running utils")
-    print("Node IP: %s" % NODE_IP)
-    print("Node Port: %s" % NODE_PORT)
-    if NODE_IP == 'Unknown':
-        print("\tConsider issuing `systemctl restart akromanode` and re-running utils")
-    print("Geth Versions:")
+    print "Enode Id: %s" % enode_id
+    if enode_id == 'Unknown':
+        print "\tConsider issuing `systemctl restart akromanode` and re-running utils"
+    print "Node IP: %s" % node_ip
+    print "Node Port: %s" % node_port
+    if node_ip == 'Unknown':
+        print "\tConsider issuing `systemctl restart akromanode` and re-running utils"
+    print "Geth Versions:"
     for k, v in sorted(geth_versions.items()):
-        print("\t%s : %s" % (k, v))
-    print("Service Is-Active: %s" % SYSTEMD_INUSE)
-    print("Port is open locally: %s" % NODE_PORT_ACCESSIBLE)
-    if SYSTEMD_INUSE:
-        print("Service Error(s):")
-        print(JOURNAL_DATA)
+        print "\t%s : %s" % (k, v)
+    print "Service Is-Active: %s" % systemd_inuse
+    print "Port is open locally: %s" % node_port_accessible
+    if systemd_inuse:
+        print "Service Error(s):"
+        print journal_data
 
 if __name__ == '__main__':
     main()
