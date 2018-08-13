@@ -2,14 +2,15 @@
 """Akroma MasterNode Utils"""
 
 import argparse
+import os
 import re
 import socket
 import sys
 from lib.api import get_script_versions
-from lib.utils import service_status, timed_run
+from lib.utils import parse_service_file, service_status, timed_run
 
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
-VERSION = '0.0.3'
+VERSION = '0.0.4'
 
 def main():
     """Main"""
@@ -22,22 +23,19 @@ def main():
         print "Version: %s" % VERSION
         sys.exit(0)
 
+    parse_service_file(args) # Parse akromanode.service
+    if args.user is None:
+        args.user = 'root'
+
     # Determine if akromanode service is running
     systemd_inuse = service_status('akromanode', 'is-active')
 
-    # Get akromanode enode id and node port
-    enode_id = 'Unknown'
-    node_port = 'Unknown'
-    if systemd_inuse:
-        ret, out = timed_run('journalctl -u akromanode.service')
-        if ret is None or int(ret) != 0:
-            raise Exception("ERROR: Failed to read akromanode journal data")
-        m = re.search(r'HTTP endpoint opened\s*url=http:\/\/0.0.0.0:(\d+)\s*', out)
-        if m:
-            node_port = int(m.group(1))
-        m = re.search(r'UDP listener up\s*self=enode:\/\/(\w+)\@', out)
-        if m:
-            enode_id = str(m.group(1))
+    # Get akromanode enode id
+    user_home = os.path.expanduser('~%s' % args.user)
+    ret, out = timed_run('/usr/sbin/geth attach --datadir %s/.akroma/ --exec "admin.nodeInfo.id"' % user_home)
+    if ret is None or int(ret) != 0:
+        raise Exception("ERROR: Failed to read enode id")
+    enode_id = re.sub(r'"', '', out)
 
     # Get public ip
     ret, out = timed_run('curl --silent -4 icanhazip.com')
@@ -53,9 +51,9 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(5)
     try:
-        if not isinstance(node_port, (int)):
+        if not isinstance(args.rpcport, (int)):
             raise socket.error
-        ret = sock.connect((node_ip, node_port))
+        ret = sock.connect((node_ip, args.rpcport))
         node_port_accessible = True
     except socket.error:
         node_port_accessible = False
@@ -69,12 +67,11 @@ def main():
             journal_data = str(out)
 
     print "Enode Id: %s" % enode_id
-    if enode_id == 'Unknown':
-        print "\tConsider issuing `systemctl restart akromanode` and re-running utils"
     print "Node IP: %s" % node_ip
-    print "Node Port: %s" % node_port
-    if node_ip == 'Unknown':
-        print "\tConsider issuing `systemctl restart akromanode` and re-running utils"
+    print "Node Port: %s" % args.rpcport
+    if args.rpcuser is not None and args.rpcpassword is not None:
+        print "RPC User: %s" % args.rpcuser
+        print "RPC Password: %s" % args.rpcpassword
     print "Geth Versions:"
     for k, v in sorted(geth_versions.items()):
         print "\t%s : %s" % (k, v)

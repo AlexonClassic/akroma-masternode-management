@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import re
+import readline
 import shlex
 import sys
 import termios
@@ -21,46 +22,28 @@ def autoupdate_cron(os_family, remove=False):
     """
     Enable/remove Akroma Auto-update cron
     """
-    if os_family in ('Debian', 'RedHat'):
-        cron = CronTab('root')
-        if remove:
-            print "==========================\nRemoving Akroma MasterNode auto-update...\n=========================="
-            cron.remove_all(comment='Akroma MasterNode Auto-Update')
+    cron = CronTab('root')
+    if remove:
+        print_cmd('Removing Akroma MasterNode auto-update...')
+        cron.remove_all(comment='Akroma MasterNode Auto-Update')
+        cron.write()
+    elif not sum(1 for _ in cron.find_comment('Akroma MasterNode Auto-Update')):
+        res = input_bool('Auto-update Akroma MasterNode? [Y/n]', 'Y')
+        if res == 'Y':
+            print_cmd('Enabling Akroma MasterNode auto-update...')
+            job = cron.new(command='/usr/sbin/akroma-mn-setup', comment='Akroma MasterNode Auto-Update')
+            job.setall('%d %d * * *' % (random.randint(0, 59), random.randint(0, 23)))
             cron.write()
-        elif not sum(1 for _ in cron.find_comment('Akroma MasterNode Auto-Update')):
-            try:
-                fd = sys.stdin.fileno()
-                old_settings = termios.tcgetattr(fd)
-                tty.setraw(sys.stdin.fileno())
-                sys.stdout.write('Auto-update Akroma MasterNode? [Y/n] ')
-                res = ''
-                while res not in ('Y', 'N'):
-                    res = sys.stdin.read(1).upper()
-                    if res == "\x03":
-                        raise KeyboardInterrupt
-                    if res == '\r':
-                        res = 'Y'
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            print res
-            if res == 'Y':
-                print "==========================\nEnabling Akroma MasterNode auto-update...\n=========================="
-                job = cron.new(command='/usr/sbin/akroma-mn-setup', comment='Akroma MasterNode Auto-Update')
-                job.setall('%d %d * * *' % (random.randint(0, 59), random.randint(0, 23)))
-                cron.write()
-                print "==========================\nEnabling and starting cron service...\n=========================="
-                if os_family == 'RedHat':
-                    ret, _ = timed_run('yum -d1 -y install cronie')
-                else:
-                    ret, _ = timed_run('apt-get install cron -y')
-                if ret is None or int(ret) != 0:
-                    raise Exception("ERROR: Failed to install cron")
-                if os_family == 'RedHat':
-                    service_status('crond', 'enable')
-                    service_status('crond', 'start')
-                else:
-                    service_status('cron', 'enable')
-                    service_status('cron', 'start')
+            print_cmd('Enabling and starting cron service...')
+            if os_family == 'RedHat':
+                ret, _ = timed_run('yum -d1 -y install cronie')
+            else:
+                ret, _ = timed_run('apt-get install cron -y')
+            if ret is None or int(ret) != 0:
+                raise Exception("ERROR: Failed to install cron")
+            service = 'cron' if os_family != 'RedHat' else 'crond'
+            for status in ('enable', 'start'):
+                service_status(service, status)
 
 def execute(cmd, tmo=60, max_retries=1, wait_ms=0, \
             stdin_str=None, log=True, separate_stderr=True):
@@ -102,6 +85,38 @@ def execute(cmd, tmo=60, max_retries=1, wait_ms=0, \
 
         return p.returncode, out
     return _execute(cmd, tmo, stdin_str, log, separate_stderr)
+
+def input_bool(text, default):
+    """
+    Accept input from CLI until Y, N, or CTRL-C pressed
+    """
+    try:
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        tty.setraw(sys.stdin.fileno())
+        sys.stdout.write('%s ' % text)
+        res = ''
+        while res not in ('Y', 'N'):
+            res = sys.stdin.read(1).upper()
+            if res == "\x03":
+                raise KeyboardInterrupt
+            if res == '\r':
+                res = default
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    print res
+    return res
+
+def input_text(text, default=''):
+    """
+    Accept any input from CLI
+    """
+    default = str(default) if isinstance(default, (int)) else default
+    readline.set_startup_hook(lambda: readline.insert_text(default))
+    try:
+        return raw_input('%s ' % text)
+    finally:
+        readline.set_startup_hook()
 
 def isvalidusername(user):
     """
@@ -172,6 +187,14 @@ def parse_service_file(args):
     """
     Parse akromanode.service, if it exists, and set/override defaults
     """
+    # Set default args if undefined
+    for i in ('memory', 'rpcpassword', 'rpcport', 'port', 'rpcuser', 'user'):
+        if i not in args:
+            setattr(args, i, None)
+    for i in ('no_rpcuser', ):
+        if i not in args:
+            setattr(args, i, False)
+
     service_file = '/etc/systemd/system/akromanode.service'
     content = None
     try:
@@ -185,10 +208,14 @@ def parse_service_file(args):
             if m:
                 if args.memory is None:
                     args.memory = True
+            m = re.search(r'--port\s+(\d+)', content)
+            if m:
+                if args.port is None:
+                    args.port = int(m.group(1))
             m = re.search(r'--rpcport\s+(\d+)', content)
             if m:
                 if args.rpcport is None:
-                    args.rpcport = m.group(1)
+                    args.rpcport = int(m.group(1))
             m = re.search(r'--rpcuser\s+(\w+)', content)
             if m:
                 if args.rpcuser is None:
@@ -202,6 +229,8 @@ def parse_service_file(args):
 
     if args.memory is None:
         args.memory = False
+    if args.port is None:
+        args.port = 30303
     if args.rpcport is None:
         args.rpcport = 8545
     if args.user is None and not os.path.isfile(service_file):
@@ -210,6 +239,14 @@ def parse_service_file(args):
         args.rpcuser = None
         args.rpcpassword = None
     return content
+
+def print_cmd(cmd):
+    """
+    Print str surrounded by = signs
+    """
+    print "=========================="
+    print cmd
+    print "=========================="
 
 def service_status(service, status):
     """

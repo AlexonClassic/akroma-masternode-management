@@ -29,21 +29,17 @@ def autoupdate_scripts(arch, version, url):
             data.write(ret.content)
             data.seek(0)
             with open(f, 'w') as fd:
-                print "==========================\nUpdating %s...\n==========================" % f
+                utils.print_cmd('Updating %s...' % f)
                 fd.write(data.read())
                 os.chmod(f, 0755)
 
-def download_geth(os_family, arch, version, url):
+def download_geth(arch, version, url):
     """
     Download and install geth
     """
     url += '/%s/release.linux-' % version
     if arch == 'x86_64':
-        if os_family in ('Debian', 'RedHat'):
-            url += 'amd64'
-        else:
-            print "Unsupported OS for geth.  You may need to setup akromanode manually."
-            return False
+        url += 'amd64'
     elif arch == 'armv5l':
         url += 'arm-5'
     elif arch == 'armv6l':
@@ -55,11 +51,7 @@ def download_geth(os_family, arch, version, url):
     elif arch == 'aarch64':
         url += 'arm-64'
     elif arch == 'i686':
-        if os_family in ('Debian', 'RedHat'):
-            url += '386'
-        else:
-            print "Unsupported OS for geth.  You may need to setup akromanode manually."
-            return False
+        url += '386'
     else:
         print "Unsupported OS for geth.  You may need to setup akromanode manually."
         return False

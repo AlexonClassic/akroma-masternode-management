@@ -9,8 +9,7 @@ Features
 
 * TODO
 
-1. Interactive mode
-2. Detect OS TMPDIR and set environment variable to an exec one
+1. Detect OS TMPDIR and set environment variable to an exec one
 
 
 Howto
