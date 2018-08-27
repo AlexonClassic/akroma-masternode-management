@@ -31,8 +31,7 @@ def autoupdate_scripts(arch, version, url):
             with open(f, 'w') as fd:
                 utils.print_cmd('Updating %s...' % f)
                 fd.write(data.read())
-                os.chmod(f, 0700)
-                os.chown(f, 0, 0)
+                utils.check_perms(f, '0700')
 
 def download_geth(arch, version, url):
     """
@@ -63,8 +62,7 @@ def download_geth(arch, version, url):
 
     if extract_zip(url, '/usr/sbin'):
         f = '/usr/sbin/geth-akroma'
-        os.chmod(f, 0755)
-        os.chown(f, 0, 0)
+        utils.check_perms(f, '0755')
         return True
     return False
 

@@ -295,8 +295,10 @@ After=network.target
     # If auto-generated service file != on-disk service file, rewrite it
     if service_file != new_service_file:
         utils.print_cmd('Creating/updating akromanode service file...')
-        with open('/etc/systemd/system/akromanode.service', 'w') as fd:
+        f = '/etc/systemd/system/akromanode.service'
+        with open(f, 'w') as fd:
             fd.write(new_service_file)
+            utils.check_perms(f, '0644')
         ret, _ = utils.timed_run('systemctl daemon-reload')
         if ret is None or int(ret) != 0:
             raise Exception('ERROR: Failed to reload systemctl')

@@ -12,8 +12,7 @@ Features
 1. If setup updates, rehup
 2. Make exceptions clearer
 3. Move inline service file to jinja template
-4. Make sure service file is root:root owned, 0644 permissions
-5. Make routine to handle ownership and permission checking and setting
+4. Handle returns from utils.check_perms and hook into standard checks
 
 Howto
 -----
