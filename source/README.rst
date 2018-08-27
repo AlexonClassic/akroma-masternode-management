@@ -13,6 +13,7 @@ Features
 2. Make exceptions clearer
 3. Move inline service file to jinja template
 4. Handle returns from utils.check_perms and hook into standard checks
+5. Add setuid to $USER for scripts that make sense.  Not convinced about this feature
 
 Howto
 -----
