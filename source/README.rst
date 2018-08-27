@@ -9,11 +9,11 @@ Features
 
 * TODO
 
-1. Rename geth to geth-akroma
-2. If setup updates, rehup
-3. Make exceptions clearer
-4. Move inline service file to jinja template
-5. Make sure service file is root:root owned, 0644 permissions
+1. If setup updates, rehup
+2. Make exceptions clearer
+3. Move inline service file to jinja template
+4. Make sure service file is root:root owned, 0644 permissions
+5. Make routine to handle ownership and permission checking and setting
 
 Howto
 -----

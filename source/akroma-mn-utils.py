@@ -32,7 +32,7 @@ def main():
 
     # Get akromanode enode id
     user_home = os.path.expanduser('~%s' % args.user)
-    ret, out = timed_run('/usr/sbin/geth attach --datadir %s/.akroma/ --exec "admin.nodeInfo.id"' % user_home)
+    ret, out = timed_run('/usr/sbin/geth-akroma attach --datadir %s/.akroma/ --exec "admin.nodeInfo.id"' % user_home)
     if ret is None or int(ret) != 0:
         raise Exception("ERROR: Failed to read enode id")
     enode_id = re.sub(r'"', '', out)

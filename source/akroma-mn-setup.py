@@ -98,7 +98,7 @@ def main():
         sys.exit(0)
 
     # Get current geth version, and those returned by API
-    geth_versions = api.get_script_versions(GETH_VERSIONS_URI, 'geth version')
+    geth_versions = api.get_script_versions(GETH_VERSIONS_URI, '/usr/sbin/geth-akroma version')
     service_file = utils.parse_service_file(args) # Parse akromanode.service, if it exists, and override defaults
     new_service_file = """[Unit]
 Description=Akroma Client -- masternode service
@@ -280,7 +280,7 @@ After=network.target
             raise Exception('ERROR: Failed to download geth')
         restart_service = True
 
-    new_service_file += "ExecStart=/usr/sbin/geth --masternode"
+    new_service_file += "ExecStart=/usr/sbin/geth-akroma --masternode"
 
     if args.port != 30303:
         new_service_file += " --port {0}".format(args.port)
