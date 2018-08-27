@@ -12,8 +12,8 @@ Features
 1. Rename geth to geth-akroma
 2. If setup updates, rehup
 3. Make exceptions clearer
-4. setup and utils to install as 0700
-5. Move inline service file to jinja template
+4. Move inline service file to jinja template
+5. Make sure service file is root:root owned, 0644 permissions
 
 Howto
 -----
