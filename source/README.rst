@@ -14,6 +14,7 @@ Features
 3. Move inline service file to jinja template
 4. Handle returns from utils.check_perms and hook into standard checks
 5. Add setuid to $USER for scripts that make sense.  Not convinced about this feature
+6. Add fail2ban option
 
 Howto
 -----
