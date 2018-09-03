@@ -9,11 +9,10 @@ Features
 
 * TODO
 
-1. If setup updates, rehup
-2. Move inline service file to jinja template
-3. utils.check_perms check inside main loop
-4. Add setuid to $USER for scripts that make sense.  Not convinced about this feature
-5. Add fail2ban option
+1. Move inline service file to jinja template
+2. utils.check_perms check inside main loop
+3. Add setuid to $USER for scripts that make sense.  Not convinced about this feature
+4. Add fail2ban option
 
 Howto
 -----
