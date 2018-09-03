@@ -45,7 +45,7 @@ def main():
         node_ip = str(out)
 
     # Get geth versions
-    geth_versions = get_script_versions(GETH_VERSIONS_URI, 'geth version')
+    geth_versions = get_script_versions(GETH_VERSIONS_URI, '/usr/sbin/geth-akroma version')
 
     # Check if node port is accessible
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
