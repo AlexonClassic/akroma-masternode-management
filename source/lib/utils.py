@@ -49,13 +49,14 @@ def check_perms(filename, permissions, uid=0, gid=0):
     """
     Check and set filename ownership and permissions
     """
-    stat = os.stat(filename)
-    mode = oct(stat.st_mode & 0o777)
-    if mode != permissions or stat.st_uid != uid or stat.st_gid != gid:
-        os.chmod(filename, int(permissions, 8))
-        os.chown(filename, uid, gid)
-        return True
-    return None
+    try:
+        stat = os.stat(filename)
+        mode = oct(stat.st_mode & 0o777)
+        if mode != permissions or stat.st_uid != uid or stat.st_gid != gid:
+            os.chmod(filename, int(permissions, 8))
+            os.chown(filename, uid, gid)
+    except OSError:
+        raise Exception("ERROR: Failed to set ownership/permissions on %s" % filename)
 
 def execute(cmd, tmo=60, max_retries=1, wait_ms=0, \
             stdin_str=None, log=True, separate_stderr=True):
