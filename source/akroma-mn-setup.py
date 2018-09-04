@@ -2,6 +2,7 @@
 """Akroma MasterNode Setup and Auto-Update"""
 
 import argparse
+from jinja2 import Environment, FileSystemLoader
 import os
 import pwd
 import sys
@@ -100,12 +101,6 @@ def main():
     # Get current geth version, and those returned by API
     geth_versions = api.get_script_versions(GETH_VERSIONS_URI, '/usr/sbin/geth-akroma version')
     service_file = utils.parse_service_file(args) # Parse akromanode.service, if it exists, and override defaults
-    new_service_file = """[Unit]
-Description=Akroma Client -- masternode service
-After=network.target
-
-[Service]
-"""
 
     # Gather data for interactive mode
     if args.interactive:
@@ -178,7 +173,6 @@ After=network.target
 
     # Create/verify user to run akromanode exists
     if args.user:
-        new_service_file += "User={0}\nGroup={0}\n".format(args.user)
         utils.print_cmd('User configuration.')
         try:
             pwd.getpwnam(args.user)
@@ -191,8 +185,6 @@ After=network.target
                 ret, _ = utils.timed_run('adduser %s --gecos "" --disabled-password --system --group' % args.user)
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to create user %s" % args.user)
-
-    new_service_file += "Type=simple\nRestart=always\nRestartSec=30s\n"
 
     # Install OS Family specific dependencies
     utils.print_cmd('Installing dependencies...')
@@ -211,10 +203,8 @@ After=network.target
         if os_arch == 'x86_64':
             utils.print_cmd('Installing jemalloc...')
             if os_family == 'RedHat':
-                new_service_file += 'Environment="LD_PRELOAD=/usr/lib64/libjemalloc.so.1"\n'
                 ret, _ = utils.timed_run('yum -d1 -y install jemalloc')
             else:
-                new_service_file += 'Environment="LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.1"\n'
                 ret, _ = utils.timed_run('apt-get install libjemalloc1 -y')
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to install jemalloc")
@@ -280,19 +270,11 @@ After=network.target
             raise Exception('ERROR: Failed to download geth')
         restart_service = True
 
-    new_service_file += "ExecStart=/usr/sbin/geth-akroma --masternode"
-
-    if args.port != 30303:
-        new_service_file += " --port {0}".format(args.port)
-
-    new_service_file += " --rpcport {0} --rpcvhosts *".format(args.rpcport)
-
-    if args.rpcuser:
-        new_service_file += " --rpcuser {0} --rpcpassword {1}".format(args.rpcuser, args.rpcpassword)
-
-    new_service_file += "\n\n[Install]\nWantedBy=default.target\n"
-
     # If auto-generated service file != on-disk service file, rewrite it
+    # Load and render template
+    jinja2_env = Environment(loader=FileSystemLoader(utils.resource_path('templates')))
+    template = jinja2_env.get_template('akromanode.service.tmpl')
+    new_service_file = template.render(args=args, os_family=os_family)
     if service_file != new_service_file:
         utils.print_cmd('Creating/updating akromanode service file...')
         f = '/etc/systemd/system/akromanode.service'

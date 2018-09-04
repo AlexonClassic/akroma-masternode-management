@@ -1,4 +1,5 @@
 distro
+jinja
 pyinstaller
 python-crontab
 subprocess32
