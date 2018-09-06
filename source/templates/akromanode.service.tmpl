@@ -17,7 +17,7 @@ Environment="LD_PRELOAD=/usr/lib64/libjemalloc.so.1"
 Environment="LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.1"
 {%- endif %}
 {%- endif %}
-ExecStart=/usr/sbin/geth --masternode {%- if args.port != 30303 %} --port {{ args.port }} {%- endif %} --rpcport {{ args.rpcport }} --rpcvhosts * {%- if args.rpcuser %} --rpcuser {{ args.rpcuser }} --rpcpassword {{ args.rpcpassword }} {%- endif %}
+ExecStart=/usr/sbin/geth-akroma --masternode {%- if args.port != 30303 %} --port {{ args.port }} {%- endif %} --rpcport {{ args.rpcport }} --rpcvhosts * {%- if args.rpcuser %} --rpcuser {{ args.rpcuser }} --rpcpassword {{ args.rpcpassword }} {%- endif %}
 
 [Install]
 WantedBy=default.target

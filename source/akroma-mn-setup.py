@@ -68,7 +68,7 @@ def main():
         utils.print_cmd('Migrating masternode service...')
         if utils.service_status('masternode', 'stop'):
             os.rename('/etc/systemd/system/masternode.service', '/etc/systemd/system/akromanode.service')
-            ret, _ = utils.timed_run('systemctl daemon-reload')
+            ret, _ = utils.timed_run('/bin/systemctl daemon-reload')
             if ret is None or int(ret) != 0:
                 raise Exception('ERROR: Migration of masternode service failed')
             restart_service = True
@@ -92,7 +92,7 @@ def main():
                 os.remove(f)
         utils.autoupdate_cron(os_family, remove=True)
         # Remove scripts
-        for f in ('geth', 'akroma-mn-setup', 'akroma-mn-utils'):
+        for f in ('geth-akroma', 'akroma-mn-setup', 'akroma-mn-utils'):
             f = '/usr/sbin/' + f
             if os.path.isfile(f):
                 os.remove(f)
@@ -281,7 +281,7 @@ def main():
         with open(f, 'w') as fd:
             fd.write(new_service_file)
             utils.check_perms(f, '0644')
-        ret, _ = utils.timed_run('systemctl daemon-reload')
+        ret, _ = utils.timed_run('/bin/systemctl daemon-reload')
         if ret is None or int(ret) != 0:
             raise Exception('ERROR: Failed to reload systemctl')
         restart_service = True

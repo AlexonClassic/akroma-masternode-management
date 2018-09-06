@@ -275,7 +275,7 @@ def service_status(service, status):
     """
     Check/change provided service status
     """
-    ret, _ = timed_run('systemctl %s %s' % (status, service))
+    ret, _ = timed_run('/bin/systemctl %s %s' % (status, service))
     if ret is None or int(ret) != 0:
         return False
     return True
