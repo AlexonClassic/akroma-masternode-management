@@ -1,3 +1,4 @@
 *.pyc
+*.spec
 source/build
 source/dist
