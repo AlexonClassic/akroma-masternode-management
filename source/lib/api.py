@@ -31,7 +31,7 @@ def autoupdate_scripts(arch, version, url):
             with open(f, 'w') as fd:
                 utils.print_cmd('Updating %s...' % f)
                 fd.write(data.read())
-                utils.check_perms(f, '0700')
+                os.chmod(f, 0755)
 
 def download_geth(arch, version, url):
     """
@@ -61,8 +61,7 @@ def download_geth(arch, version, url):
         utils.service_status('akromanode', 'stop')
 
     if extract_zip(url, '/usr/sbin'):
-        f = '/usr/sbin/geth-akroma'
-        utils.check_perms(f, '0755')
+        os.chmod('/usr/sbin/geth', 0755)
         return True
     return False
 
@@ -72,10 +71,7 @@ def extract_zip(url, directory):
     """
     try:
         f = zipfile.ZipFile(StringIO.StringIO(requests.get(url).content))
-        for fn in f.infolist():
-            if fn.filename == 'geth':
-                fn.filename = 'geth-akroma'
-            f.extract(fn, directory)
+        f.extractall(directory)
         return True
     except zipfile.BadZipfile:
         return False
