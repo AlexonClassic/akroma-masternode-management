@@ -10,7 +10,7 @@ from lib.api import get_script_versions
 from lib.utils import parse_service_file, service_status, timed_run
 
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
-VERSION = '0.0.5'
+VERSION = '0.0.6'
 
 def main():
     """Main"""

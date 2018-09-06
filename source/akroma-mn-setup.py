@@ -13,7 +13,7 @@ GETH_URI = 'https://github.com/akroma-project/akroma/releases/download'
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
 SCRIPTS_URI = 'https://github.com/akroma-project/akroma-masternode-management/releases/download/'
 SCRIPTS_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma-masternode-management/master/versions.json'
-VERSION = '0.0.5'
+VERSION = '0.0.6'
 
 # OS and Version compatibility matrix (Major version)
 COMPAT_MATRIX = {'CentOS': [7],
