@@ -10,7 +10,7 @@ from lib.api import get_script_versions
 from lib.utils import parse_service_file, service_status, timed_run
 
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
-VERSION = '0.0.4'
+VERSION = '0.0.6'
 
 def main():
     """Main"""
@@ -32,7 +32,7 @@ def main():
 
     # Get akromanode enode id
     user_home = os.path.expanduser('~%s' % args.user)
-    ret, out = timed_run('/usr/sbin/geth attach --datadir %s/.akroma/ --exec "admin.nodeInfo.id"' % user_home)
+    ret, out = timed_run('/usr/sbin/geth-akroma attach --datadir %s/.akroma/ --exec "admin.nodeInfo.id"' % user_home)
     if ret is None or int(ret) != 0:
         raise Exception("ERROR: Failed to read enode id")
     enode_id = re.sub(r'"', '', out)
@@ -45,7 +45,7 @@ def main():
         node_ip = str(out)
 
     # Get geth versions
-    geth_versions = get_script_versions(GETH_VERSIONS_URI, 'geth version')
+    geth_versions = get_script_versions(GETH_VERSIONS_URI, '/usr/sbin/geth-akroma version')
 
     # Check if node port is accessible
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

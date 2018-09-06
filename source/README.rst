@@ -9,8 +9,9 @@ Features
 
 * TODO
 
-1. Detect OS TMPDIR and set environment variable to an exec one
-
+1. utils.check_perms check inside main loop
+2. Add setuid to $USER for scripts that make sense.  Not convinced about this feature
+3. Add fail2ban option
 
 Howto
 -----
@@ -38,8 +39,8 @@ Howto
 
 2. Compile architecture specific binaries, in dist/ folder::
 
-    pyinstaller --onefile --noconfirm --clean --log-level=WARN --strip --runtime-tmpdir /dev/shm akroma-mn-setup.py
-    pyinstaller --onefile --noconfirm --clean --log-level=WARN --strip --runtime-tmpdir /dev/shm akroma-mn-utils.py
+    pyinstaller --clean akroma-mn-setup.spec
+    pyinstaller --clean akroma-mn-utils.spec
 
 3. Submit new binaries to GH repo renamed as akroma-mn-setup.`uname -m` and akroma-mn-utils.`uname -m`
    Binaries will initially be named dist/akroma-mn-setup and dist/akroma-mn-utils
@@ -66,4 +67,4 @@ Known Issues
 
 2. When running pyinstaller, you may receive "WARNING: library user32 required via ctypes not found".  This can be ignored.
 
-3. To ensure as wide-spread universal support for x86_64, build the binaries on CentOS 7.x, minimal setup.
+3. To ensure as wide-spread universal support for 32 and 64-bit, build the binaries on CentOS 7.x, minimal setup.

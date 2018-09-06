@@ -45,6 +45,19 @@ def autoupdate_cron(os_family, remove=False):
             for status in ('enable', 'start'):
                 service_status(service, status)
 
+def check_perms(filename, permissions, uid=0, gid=0):
+    """
+    Check and set filename ownership and permissions
+    """
+    try:
+        stat = os.stat(filename)
+        mode = oct(stat.st_mode & 0o777)
+        if mode != permissions or stat.st_uid != uid or stat.st_gid != gid:
+            os.chmod(filename, int(permissions, 8))
+            os.chown(filename, uid, gid)
+    except OSError:
+        raise Exception("ERROR: Failed to set ownership/permissions on %s" % filename)
+
 def execute(cmd, tmo=60, max_retries=1, wait_ms=0, \
             stdin_str=None, log=True, separate_stderr=True):
     """
@@ -248,11 +261,21 @@ def print_cmd(cmd):
     print cmd
     print "=========================="
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 def service_status(service, status):
     """
     Check/change provided service status
     """
-    ret, _ = timed_run('systemctl %s %s' % (status, service))
+    ret, _ = timed_run('/bin/systemctl %s %s' % (status, service))
     if ret is None or int(ret) != 0:
         return False
     return True
