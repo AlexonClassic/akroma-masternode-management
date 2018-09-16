@@ -38,7 +38,7 @@ def main():
     enode_id = re.sub(r'"', '', out)
 
     # Get public ip
-    ret, out = timed_run('curl --silent -4 icanhazip.com')
+    ret, out = timed_run('/usr/bin/curl --silent -4 icanhazip.com')
     if ret is None or int(ret) != 0:
         raise Exception("ERROR: Failed to obtain node ip")
     else:
@@ -60,7 +60,7 @@ def main():
 
     # Get akromanode debug journal data
     if systemd_inuse:
-        ret, out = timed_run('journalctl -u akromanode.service -n 20 -p 5')
+        ret, out = timed_run('/bin/journalctl -u akromanode.service -n 20 -p 5')
         if ret is None or int(ret) != 0:
             print "ERROR: Failed to read akromanode journal data"
         else:

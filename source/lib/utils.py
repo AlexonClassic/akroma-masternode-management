@@ -36,9 +36,9 @@ def autoupdate_cron(os_family, remove=False):
             cron.write()
             print_cmd('Enabling and starting cron service...')
             if os_family == 'RedHat':
-                ret, _ = timed_run('yum -d1 -y install cronie')
+                ret, _ = timed_run('/usr/bin/yum -d1 -y install cronie')
             else:
-                ret, _ = timed_run('apt-get install cron -y')
+                ret, _ = timed_run('/usr/bin/apt-get install cron -y')
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to install cron")
             service = 'cron' if os_family != 'RedHat' else 'crond'

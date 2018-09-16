@@ -180,18 +180,18 @@ def main():
         except KeyError:
             print "Creating user %s." % args.user
             if os_family == 'RedHat':
-                ret, _ = utils.timed_run('adduser -r %s -s /bin/false -b /home -m' % args.user)
+                ret, _ = utils.timed_run('/usr/sbin/adduser -r %s -s /bin/false -b /home -m' % args.user)
             else:
-                ret, _ = utils.timed_run('adduser %s --gecos "" --disabled-password --system --group' % args.user)
+                ret, _ = utils.timed_run('/usr/sbin/adduser %s --gecos "" --disabled-password --system --group' % args.user)
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to create user %s" % args.user)
 
     # Install OS Family specific dependencies
     utils.print_cmd('Installing dependencies...')
     if os_family == 'RedHat':
-        ret, _ = utils.timed_run('yum -d1 -y install curl')
+        ret, _ = utils.timed_run('/usr/bin/yum -d1 -y install curl')
     else:
-        ret, _ = utils.timed_run('apt-get install curl -y')
+        ret, _ = utils.timed_run('/usr/bin/apt-get install curl -y')
     if ret is None or int(ret) != 0:
         raise Exception("ERROR: Failed to install curl")
 
@@ -203,9 +203,9 @@ def main():
         if os_arch == 'x86_64':
             utils.print_cmd('Installing jemalloc...')
             if os_family == 'RedHat':
-                ret, _ = utils.timed_run('yum -d1 -y install jemalloc')
+                ret, _ = utils.timed_run('/usr/bin/yum -d1 -y install jemalloc')
             else:
-                ret, _ = utils.timed_run('apt-get install libjemalloc1 -y')
+                ret, _ = utils.timed_run('/usr/bin/apt-get install libjemalloc1 -y')
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to install jemalloc")
         else:
@@ -217,22 +217,22 @@ def main():
         args.ufw = True if res == 'Y' else False
     if args.ufw:
         if os_arch == 'x86_64' or os_family == 'Debian':
-            ufw_rules = ['ufw --force reset',
-                         'ufw --force disable',
-                         'ufw default deny incoming',
-                         'ufw default allow outgoing',
-                         'ufw allow ssh',
-                         'ufw allow %s/tcp' % args.rpcport,
-                         'ufw allow %s/tcp' % args.port,
-                         'ufw allow %s/udp' % args.port,
-                         'ufw --force enable',
-                         'ufw status'
+            ufw_rules = ['/usr/sbin/ufw --force reset',
+                         '/usr/sbin/ufw --force disable',
+                         '/usr/sbin/ufw default deny incoming',
+                         '/usr/sbin/ufw default allow outgoing',
+                         '/usr/sbin/ufw allow ssh',
+                         '/usr/sbin/ufw allow %s/tcp' % args.rpcport,
+                         '/usr/sbin/ufw allow %s/tcp' % args.port,
+                         '/usr/sbin/ufw allow %s/udp' % args.port,
+                         '/usr/sbin/ufw --force enable',
+                         '/usr/sbin/ufw status'
                         ]
             utils.print_cmd('Installing/configuring ufw...')
             if os_family == 'RedHat':
-                ret, _ = utils.timed_run('yum -d1 -y install ufw')
+                ret, _ = utils.timed_run('/usr/bin/yum -d1 -y install ufw')
             else:
-                ret, _ = utils.timed_run('apt-get install ufw -y')
+                ret, _ = utils.timed_run('/usr/bin/apt-get install ufw -y')
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to install ufw")
             for rule in ufw_rules:
