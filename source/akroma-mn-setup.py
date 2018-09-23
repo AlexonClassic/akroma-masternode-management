@@ -281,8 +281,6 @@ def main():
     script_versions = api.get_script_versions(SCRIPTS_VERSIONS_URI, '/usr/sbin/akroma-mn-setup -v')
     if script_versions['current'] != script_versions['stable']:
         api.autoupdate_scripts(os_arch, script_versions['stable'], SCRIPTS_URI)
-        utils.print_cmd('Reloading Akroma Setup')
-        os.execv('/usr/sbin/akroma-mn-setup', sys.argv)
 
     utils.print_cmd('Akroma MasterNode up-to-date...')
 
