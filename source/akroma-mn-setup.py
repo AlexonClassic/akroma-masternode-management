@@ -21,13 +21,6 @@ COMPAT_MATRIX = {'CentOS': [7],
                  'Ubuntu': [16, 18],
                 }
 
-class NegateAction(argparse.Action):
-    """
-    Allow [--no]-arg toggle
-    """
-    def __call__(self, parser, ns, values, option):
-        setattr(ns, self.dest, option[2:4] != 'no')
-
 def main():
     """Main"""
     parser = argparse.ArgumentParser()
