@@ -41,6 +41,7 @@ def main():
     parser.add_argument("--no-rpcpassword", help="Remove RPC User/Password (Optional)", dest="no_rpcuser", \
                         action='store_true')
     parser.add_argument("--ufw", help="Configure UFW (Optional)", action='store_true')
+    parser.add_argument("--update-only", help="Update geth and scripts only.  Disables auto-update cron", action='store_true')
     parser.add_argument("-v", "--version", help="Script Version", action='store_true')
     args = parser.parse_args()
 
@@ -168,7 +169,7 @@ def main():
         parser.error("Please provide valid username.")
 
     # Create/verify user to run akromanode exists
-    if args.user:
+    if args.user and not args.update_only:
         utils.print_cmd('User configuration.')
         try:
             pwd.getpwnam(args.user)
@@ -248,19 +249,20 @@ def main():
 
     # If auto-generated service file != on-disk service file, rewrite it
     # Load and render template
-    jinja2_env = Environment(loader=FileSystemLoader(utils.resource_path('templates')))
-    template = jinja2_env.get_template('akromanode.service.tmpl')
-    new_service_file = template.render(args=args, os_family=os_family)
-    if service_file != new_service_file:
-        utils.print_cmd('Creating/updating akromanode service file...')
-        f = '/etc/systemd/system/akromanode.service'
-        with open(f, 'w') as fd:
-            fd.write(new_service_file)
-            utils.check_perms(f, '0644')
-        ret, _ = utils.timed_run('/bin/systemctl daemon-reload')
-        if ret is None or int(ret) != 0:
-            raise Exception('ERROR: Failed to reload systemctl')
-        restart_service = True
+    if not args.update_only:
+        jinja2_env = Environment(loader=FileSystemLoader(utils.resource_path('templates')))
+        template = jinja2_env.get_template('akromanode.service.tmpl')
+        new_service_file = template.render(args=args, os_family=os_family)
+        if service_file != new_service_file:
+            utils.print_cmd('Creating/updating akromanode service file...')
+            f = '/etc/systemd/system/akromanode.service'
+            with open(f, 'w') as fd:
+                fd.write(new_service_file)
+                utils.check_perms(f, '0644')
+            ret, _ = utils.timed_run('/bin/systemctl daemon-reload')
+            if ret is None or int(ret) != 0:
+                raise Exception('ERROR: Failed to reload systemctl')
+            restart_service = True
 
     # Enable and restart akromanode if service or geth updates have been made
     if not utils.service_status('akromanode', 'is-active') or restart_service:
@@ -269,7 +271,10 @@ def main():
             utils.service_status('akromanode', status)
 
     # Enable auto-update and update scripts
-    utils.autoupdate_cron(os_family)
+    if args.update_only:
+        utils.autoupdate_cron(os_family, remove=True)
+    else:
+        utils.autoupdate_cron(os_family)
 
     # Get current setup version, and those returned by API
     script_versions = api.get_script_versions(SCRIPTS_VERSIONS_URI, '/usr/sbin/akroma-mn-setup -v')
