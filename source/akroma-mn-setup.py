@@ -18,7 +18,7 @@ VERSION = '0.0.6'
 # OS and Version compatibility matrix (Major version)
 COMPAT_MATRIX = {'CentOS': [7],
                  'Debian': [9],
-                 'Ubuntu': [16, 17, 18],
+                 'Ubuntu': [16, 18],
                 }
 
 class NegateAction(argparse.Action):
