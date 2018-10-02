@@ -78,7 +78,10 @@ def main():
         res = utils.input_bool('Remove masternode installation [y|N]', 'N')
         args.remove = True if res == 'Y' else False
     if args.remove:
-        print "Removing masternode installation..."
+        res = utils.input_bool('Remove masternode installation [y|N]', 'N')
+        if res != 'Y':
+            sys.exit(0)
+        utils.print_cmd('Removing masternode installation...')
         f = '/etc/systemd/system/akromanode.service'
         if os.path.isfile(f):
             for status in ('stop', 'disable'):
