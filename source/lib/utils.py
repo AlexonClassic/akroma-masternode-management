@@ -240,7 +240,7 @@ def parse_service_file(args):
     Parse akromanode.service, if it exists, and set/override defaults
     """
     # Set default args if undefined
-    for i in ('memory', 'rpcpassword', 'rpcport', 'port', 'rpcuser', 'user'):
+    for i in ('rpcpassword', 'rpcport', 'port', 'rpcuser', 'user'):
         if i not in args:
             setattr(args, i, None)
     for i in ('no_rpcuser', ):
@@ -256,10 +256,6 @@ def parse_service_file(args):
             if m:
                 if args.user is None:
                     args.user = m.group(1)
-            m = re.search(r'jemalloc', content)
-            if m:
-                if args.memory is None:
-                    args.memory = True
             m = re.search(r'--port\s+(\d+)', content)
             if m:
                 if args.port is None:
@@ -279,8 +275,6 @@ def parse_service_file(args):
     except IOError:
         pass
 
-    if args.memory is None:
-        args.memory = False
     if args.port is None:
         args.port = 30303
     if args.rpcport is None:

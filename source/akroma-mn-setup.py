@@ -35,8 +35,6 @@ def main():
                         action='store_true')
     parser.add_argument("-g", "--geth", help="Geth version to use (Default: stable)", type=str, \
                         choices=['latest', 'stable'], default=None)
-    parser.add_argument("-m", "--memory", "--no-memory", help="Use alternate memory allocator (Default: False)", \
-                        dest='memory', nargs=0, action=NegateAction, default=None)
     parser.add_argument("-r", "--remove", help="Uninstall akromanode (Default: False)", action='store_true')
     parser.add_argument("-p", "--rpcport", help="RPC Port (Default: 8545)", type=int, default=None)
     parser.add_argument("--port", help="Network listening port (Default: 30303)", type=int, default=None)
@@ -194,22 +192,6 @@ def main():
         ret, _ = utils.timed_run('/usr/bin/apt-get install curl -y')
     if ret is None or int(ret) != 0:
         raise Exception("ERROR: Failed to install curl")
-
-    # Install alternate memory manager, if True
-    if args.interactive:
-        res = utils.input_bool('Use alternative memory manager [y|N]', 'N')
-        args.memory = True if res == 'Y' else False
-    if args.memory:
-        if os_arch == 'x86_64':
-            utils.print_cmd('Installing jemalloc...')
-            if os_family == 'RedHat':
-                ret, _ = utils.timed_run('/usr/bin/yum -d1 -y install jemalloc')
-            else:
-                ret, _ = utils.timed_run('/usr/bin/apt-get install libjemalloc1 -y')
-            if ret is None or int(ret) != 0:
-                raise Exception("ERROR: Failed to install jemalloc")
-        else:
-            print "Alternate memory manager is only compatible on 64-bit architectures"
 
     # Install and configure UFW, if True
     if args.interactive:
