@@ -128,6 +128,16 @@ def get_enodeid(args):
         return 'ERROR: Failed to read enode id'
     return re.sub(r'"', '', out.rstrip())
 
+def has_update(versions):
+    """
+    Determine if an update is available comparing current, stable, and latest
+    """
+    if versions['current'] == 'Unknown' or versions['current'] < versions['stable']:
+        return 'stable'
+    elif versions['current'] > versions['stable'] and versions['current'] != versions['latest']:
+        return 'latest'
+    return None
+
 def input_bool(text, default):
     """
     Accept input from CLI until Y, N, or CTRL-C pressed

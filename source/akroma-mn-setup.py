@@ -35,6 +35,8 @@ def main():
                         action='store_true')
     parser.add_argument("-g", "--geth", help="Geth version to use (Default: stable)", type=str, \
                         choices=['latest', 'stable'], default=None)
+    parser.add_argument("-s", "--scripts", help="Script version to use (Default: stable)", type=str, \
+                        choices=['latest', 'stable'], default=None)
     parser.add_argument("-r", "--remove", help="Uninstall akromanode (Default: False)", action='store_true')
     parser.add_argument("-p", "--rpcport", help="RPC Port (Default: 8545)", type=int, default=None)
     parser.add_argument("--port", help="Network listening port (Default: 30303)", type=int, default=None)
@@ -230,12 +232,8 @@ def main():
             print "ufw is only compatible with 64-bit architectures or Debian based OS'"
 
     # Determine if geth version needs to be updated
-    if geth_versions['current'] == 'Unknown' or geth_versions['current'] < geth_versions['stable']:
-        if args.geth is None:
-            args.geth = 'stable'
-    elif geth_versions['current'] > geth_versions['stable'] and geth_versions['current'] != geth_versions['latest']:
-        if args.geth is None:
-            args.geth = 'latest'
+    if args.geth is None or geth_versions['current'] == geth_versions[args.geth]:
+        args.geth = utils.has_update(geth_versions)
 
     # Swap geth from stable <-> latest
     if args.interactive:
@@ -282,8 +280,12 @@ def main():
 
     # Get current setup version, and those returned by API
     script_versions = api.get_script_versions(SCRIPTS_VERSIONS_URI, '/usr/sbin/akroma-mn-setup -v')
-    if script_versions['current'] != script_versions['stable']:
-        api.autoupdate_scripts(os_arch, script_versions['stable'], SCRIPTS_URI)
+
+    # Determine if setup/utils version needs to be updated
+    if args.scripts is None or script_versions['current'] == script_versions[args.scripts]:
+        args.scripts = utils.has_update(script_versions)
+    if args.scripts:
+        api.autoupdate_scripts(os_arch, script_versions[args.scripts], SCRIPTS_URI)
 
     utils.print_cmd('Akroma MasterNode up-to-date...')
 
