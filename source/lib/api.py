@@ -2,9 +2,8 @@
 Interface to interact with requests
 """
 
-import json
 import os
-import StringIO
+from StringIO import StringIO
 import zipfile
 import requests
 from retrying import retry
@@ -25,7 +24,7 @@ def autoupdate_scripts(arch, version, url):
             # Need to remove binary before replacing it
             if os.path.isfile(f):
                 os.remove(f)
-            data = StringIO.StringIO()
+            data = StringIO()
             data.write(ret.content)
             data.seek(0)
             with open(f, 'w') as fd:
@@ -71,7 +70,7 @@ def extract_zip(url, directory):
     Download zip file, in memory, and extract to disk
     """
     try:
-        f = zipfile.ZipFile(StringIO.StringIO(requests.get(url).content))
+        f = zipfile.ZipFile(StringIO(requests.get(url).content))
         for fn in f.infolist():
             if fn.filename == 'geth':
                 fn.filename = 'geth-akroma'
@@ -92,7 +91,7 @@ def get_script_versions(url, cmd):
     if ret.status_code != 200:
         raise Exception('"%s" returned error %d' % (url, ret.status_code))
 
-    data = json.loads(ret.content)
+    data = ret.json()
     data.update({'current': utils.script_version(cmd)})
     return data
 
