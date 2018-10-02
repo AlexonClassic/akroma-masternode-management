@@ -9,6 +9,7 @@ import random
 import re
 import readline
 import shlex
+import socket
 import sys
 import termios
 import tty
@@ -58,6 +59,21 @@ def check_perms(filename, permissions, uid=0, gid=0):
     except OSError:
         raise Exception("ERROR: Failed to set ownership/permissions on %s" % filename)
 
+def check_socket(ip, port, timeout=5):
+    """
+    Check if an network IP/port socket is open
+    Return True if it's open, False otherwise.
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    try:
+        if not isinstance(port, (int)):
+            raise socket.error
+        ret = sock.connect((ip, port))
+        return True
+    except socket.error:
+        return False
+
 def execute(cmd, tmo=60, max_retries=1, wait_ms=0, \
             stdin_str=None, log=True, separate_stderr=True):
     """
@@ -98,6 +114,19 @@ def execute(cmd, tmo=60, max_retries=1, wait_ms=0, \
 
         return p.returncode, out
     return _execute(cmd, tmo, stdin_str, log, separate_stderr)
+
+def get_enodeid(args):
+    """
+    Get enodeid of running geth process
+    """
+    try:
+        user_home = os.path.expanduser('~%s' % args.user)
+        ret, out, _ = timed_run('/usr/sbin/geth-akroma attach --datadir %s/.akroma/ --exec "admin.nodeInfo.id"' % user_home, separate_stderr=True)
+        if ret is None or int(ret) != 0:
+            raise ValueError
+    except ValueError:
+        return 'ERROR: Failed to read enode id'
+    return re.sub(r'"', '', out.rstrip())
 
 def input_bool(text, default):
     """
@@ -146,6 +175,16 @@ def isvalidrpcinfo(data):
     if re.match('^[a-zA-Z0-9]{3,15}$', data):
         return True
     return False
+
+def my_ip():
+    """
+    Get public ip address of server
+    TODO: Refactor into using requests/urllib3 AF_INET (not AF_INET6)
+    """
+    ret, out = timed_run('/usr/bin/curl --silent -4 icanhazip.com')
+    if ret is None or int(ret) != 0:
+        return 'ERROR: Failed to obtain node ip'
+    return out
 
 def os_detect():
     """

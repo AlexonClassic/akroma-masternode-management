@@ -3,11 +3,9 @@
 
 import argparse
 import os
-import re
-import socket
 import sys
 from lib.api import get_script_versions
-from lib.utils import parse_service_file, service_status, timed_run
+import lib.utils as utils
 
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
 VERSION = '0.0.6'
@@ -23,50 +21,23 @@ def main():
         print "Version: %s" % VERSION
         sys.exit(0)
 
-    parse_service_file(args) # Parse akromanode.service
+    utils.parse_service_file(args) # Parse akromanode.service
     if args.user is None:
         args.user = 'root'
 
-    # Determine if akromanode service is running
-    systemd_inuse = service_status('akromanode', 'is-active')
-
-    # Get akromanode enode id
-    user_home = os.path.expanduser('~%s' % args.user)
-    ret, out, _ = timed_run('/usr/sbin/geth-akroma attach --datadir %s/.akroma/ --exec "admin.nodeInfo.id"' % user_home, separate_stderr=True)
-    if ret is None or int(ret) != 0:
-        raise Exception("ERROR: Failed to read enode id")
-    enode_id = re.sub(r'"', '', out)
-
     # Get public ip
-    ret, out = timed_run('/usr/bin/curl --silent -4 icanhazip.com')
-    if ret is None or int(ret) != 0:
-        raise Exception("ERROR: Failed to obtain node ip")
-    else:
-        node_ip = str(out)
+    node_ip = utils.my_ip()
+
+    # Check if node port is accessible
+    node_port_accessible = utils.check_socket(node_ip, args.rpcport)
+
+    # Determine if akromanode service is running
+    systemd_inuse = utils.service_status('akromanode', 'is-active')
 
     # Get geth versions
     geth_versions = get_script_versions(GETH_VERSIONS_URI, '/usr/sbin/geth-akroma version')
 
-    # Check if node port is accessible
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(5)
-    try:
-        if not isinstance(args.rpcport, (int)):
-            raise socket.error
-        ret = sock.connect((node_ip, args.rpcport))
-        node_port_accessible = True
-    except socket.error:
-        node_port_accessible = False
-
-    # Get akromanode debug journal data
-    if systemd_inuse:
-        ret, out = timed_run('/bin/journalctl -u akromanode.service -n 20 -p 5')
-        if ret is None or int(ret) != 0:
-            print "ERROR: Failed to read akromanode journal data"
-        else:
-            journal_data = str(out)
-
-    print "Enode Id: %s" % enode_id
+    print "Enode Id: %s" % utils.get_enodeid(args)
     print "Node IP: %s" % node_ip
     print "Node Port: %s" % args.rpcport
     if args.rpcuser is not None and args.rpcpassword is not None:
@@ -79,7 +50,11 @@ def main():
     print "Port is open locally: %s" % node_port_accessible
     if systemd_inuse:
         print "Service Error(s):"
-        print journal_data
+        ret, out = utils.timed_run('/bin/journalctl -u akromanode.service -n 20 -p 5')
+        if ret is None or int(ret) != 0:
+            print "ERROR: Failed to read akromanode journal data"
+        else:
+            print out
 
 if __name__ == '__main__':
     main()
