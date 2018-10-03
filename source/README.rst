@@ -40,6 +40,8 @@ Howto
 3. Submit new binaries to GH repo renamed as akroma-mn-setup.`uname -m` and akroma-mn-utils.`uname -m`
    Binaries will initially be named dist/akroma-mn-setup and dist/akroma-mn-utils
 
+   For 32-bit, you may need to manually download pip from https://pypi.org/project/pip/
+   Also, upx may not be available for all 32-bit OS', causing binaries to be uncompressed
 
 Known Issues
 ------------
