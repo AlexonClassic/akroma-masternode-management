@@ -6,7 +6,6 @@ from jinja2 import Environment, FileSystemLoader
 import os
 import pwd
 import sys
-sys.path.insert(0, 'lib')
 import lib.api as api
 import lib.utils as utils
 

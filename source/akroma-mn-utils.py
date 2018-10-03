@@ -4,7 +4,6 @@
 import argparse
 import os
 import sys
-sys.path.insert(0, 'lib')
 from lib.api import get_script_versions
 import lib.utils as utils
 

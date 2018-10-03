@@ -1,7 +1,0 @@
-python-dateutil
-
-[cron-schedule]
-croniter
-
-[cron-description]
-cron-descriptor

@@ -62,4 +62,4 @@ Known Issues
 
 2. When running pyinstaller, you may receive "WARNING: library user32 required via ctypes not found".  This can be ignored.
 
-3. To ensure as wide-spread universal support for 64-bit, build the binaries on CentOS 7.x, minimal setup.
+3. To ensure as wide-spread universal support for 32 and 64-bit, build the binaries on CentOS 7.x, minimal setup.
