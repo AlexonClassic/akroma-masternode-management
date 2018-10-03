@@ -70,7 +70,10 @@ def extract_zip(url, directory):
     Download zip file, in memory, and extract to disk
     """
     try:
-        f = zipfile.ZipFile(StringIO(requests.get(url).content))
+        ret = HttpRetry().run('GET', url=url)
+        if ret.status_code != 200:
+            raise zipfile.BadZipfile
+        f = zipfile.ZipFile(StringIO(ret.content))
         for fn in f.infolist():
             if fn.filename == 'geth':
                 fn.filename = 'geth-akroma'

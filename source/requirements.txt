@@ -1,8 +1,2 @@
-distro
-jinja
-pyinstaller
-python-crontab
-subprocess32
-requests>=2.19.1
-retrying
-zipfile2
+pyinstaller==3.4
+subprocess32==3.5.2
