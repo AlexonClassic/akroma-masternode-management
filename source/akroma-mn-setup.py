@@ -13,20 +13,13 @@ GETH_URI = 'https://github.com/akroma-project/akroma/releases/download'
 GETH_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma/master/versions.json'
 SCRIPTS_URI = 'https://github.com/akroma-project/akroma-masternode-management/releases/download/'
 SCRIPTS_VERSIONS_URI = 'https://raw.githubusercontent.com/akroma-project/akroma-masternode-management/master/versions.json'
-VERSION = '0.0.6'
+VERSION = '0.0.7'
 
 # OS and Version compatibility matrix (Major version)
 COMPAT_MATRIX = {'CentOS': [7],
                  'Debian': [9],
-                 'Ubuntu': [16, 17, 18],
+                 'Ubuntu': [16, 18],
                 }
-
-class NegateAction(argparse.Action):
-    """
-    Allow [--no]-arg toggle
-    """
-    def __call__(self, parser, ns, values, option):
-        setattr(ns, self.dest, option[2:4] != 'no')
 
 def main():
     """Main"""
@@ -35,8 +28,8 @@ def main():
                         action='store_true')
     parser.add_argument("-g", "--geth", help="Geth version to use (Default: stable)", type=str, \
                         choices=['latest', 'stable'], default=None)
-    parser.add_argument("-m", "--memory", "--no-memory", help="Use alternate memory allocator (Default: False)", \
-                        dest='memory', nargs=0, action=NegateAction, default=None)
+    parser.add_argument("-s", "--scripts", help="Script version to use (Default: stable)", type=str, \
+                        choices=['latest', 'stable'], default=None)
     parser.add_argument("-r", "--remove", help="Uninstall akromanode (Default: False)", action='store_true')
     parser.add_argument("-p", "--rpcport", help="RPC Port (Default: 8545)", type=int, default=None)
     parser.add_argument("--port", help="Network listening port (Default: 30303)", type=int, default=None)
@@ -48,6 +41,7 @@ def main():
     parser.add_argument("--no-rpcpassword", help="Remove RPC User/Password (Optional)", dest="no_rpcuser", \
                         action='store_true')
     parser.add_argument("--ufw", help="Configure UFW (Optional)", action='store_true')
+    parser.add_argument("--update-only", help="Update geth and scripts only.  Disables auto-update cron", action='store_true')
     parser.add_argument("-v", "--version", help="Script Version", action='store_true')
     args = parser.parse_args()
 
@@ -80,7 +74,10 @@ def main():
         res = utils.input_bool('Remove masternode installation [y|N]', 'N')
         args.remove = True if res == 'Y' else False
     if args.remove:
-        print "Removing masternode installation..."
+        res = utils.input_bool('Remove masternode installation [y|N]', 'N')
+        if res != 'Y':
+            sys.exit(0)
+        utils.print_cmd('Removing masternode installation...')
         f = '/etc/systemd/system/akromanode.service'
         if os.path.isfile(f):
             for status in ('stop', 'disable'):
@@ -172,7 +169,7 @@ def main():
         parser.error("Please provide valid username.")
 
     # Create/verify user to run akromanode exists
-    if args.user:
+    if args.user and not args.update_only:
         utils.print_cmd('User configuration.')
         try:
             pwd.getpwnam(args.user)
@@ -180,36 +177,20 @@ def main():
         except KeyError:
             print "Creating user %s." % args.user
             if os_family == 'RedHat':
-                ret, _ = utils.timed_run('adduser -r %s -s /bin/false -b /home -m' % args.user)
+                ret, _ = utils.timed_run('/usr/sbin/adduser -r %s -s /bin/false -b /home -m' % args.user)
             else:
-                ret, _ = utils.timed_run('adduser %s --gecos "" --disabled-password --system --group' % args.user)
+                ret, _ = utils.timed_run('/usr/sbin/adduser %s --gecos "" --disabled-password --system --group' % args.user)
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to create user %s" % args.user)
 
     # Install OS Family specific dependencies
     utils.print_cmd('Installing dependencies...')
     if os_family == 'RedHat':
-        ret, _ = utils.timed_run('yum -d1 -y install curl')
+        ret, _ = utils.timed_run('/usr/bin/yum -d1 -y install curl')
     else:
-        ret, _ = utils.timed_run('apt-get install curl -y')
+        ret, _ = utils.timed_run('/usr/bin/apt-get install curl -y')
     if ret is None or int(ret) != 0:
         raise Exception("ERROR: Failed to install curl")
-
-    # Install alternate memory manager, if True
-    if args.interactive:
-        res = utils.input_bool('Use alternative memory manager [y|N]', 'N')
-        args.memory = True if res == 'Y' else False
-    if args.memory:
-        if os_arch == 'x86_64':
-            utils.print_cmd('Installing jemalloc...')
-            if os_family == 'RedHat':
-                ret, _ = utils.timed_run('yum -d1 -y install jemalloc')
-            else:
-                ret, _ = utils.timed_run('apt-get install libjemalloc1 -y')
-            if ret is None or int(ret) != 0:
-                raise Exception("ERROR: Failed to install jemalloc")
-        else:
-            print "Alternate memory manager is only compatible on 64-bit architectures"
 
     # Install and configure UFW, if True
     if args.interactive:
@@ -217,22 +198,22 @@ def main():
         args.ufw = True if res == 'Y' else False
     if args.ufw:
         if os_arch == 'x86_64' or os_family == 'Debian':
-            ufw_rules = ['ufw --force reset',
-                         'ufw --force disable',
-                         'ufw default deny incoming',
-                         'ufw default allow outgoing',
-                         'ufw allow ssh',
-                         'ufw allow %s/tcp' % args.rpcport,
-                         'ufw allow %s/tcp' % args.port,
-                         'ufw allow %s/udp' % args.port,
-                         'ufw --force enable',
-                         'ufw status'
+            ufw_rules = ['/usr/sbin/ufw --force reset',
+                         '/usr/sbin/ufw --force disable',
+                         '/usr/sbin/ufw default deny incoming',
+                         '/usr/sbin/ufw default allow outgoing',
+                         '/usr/sbin/ufw allow ssh',
+                         '/usr/sbin/ufw allow %s/tcp' % args.rpcport,
+                         '/usr/sbin/ufw allow %s/tcp' % args.port,
+                         '/usr/sbin/ufw allow %s/udp' % args.port,
+                         '/usr/sbin/ufw --force enable',
+                         '/usr/sbin/ufw status'
                         ]
             utils.print_cmd('Installing/configuring ufw...')
             if os_family == 'RedHat':
-                ret, _ = utils.timed_run('yum -d1 -y install ufw')
+                ret, _ = utils.timed_run('/usr/bin/yum -d1 -y install ufw')
             else:
-                ret, _ = utils.timed_run('apt-get install ufw -y')
+                ret, _ = utils.timed_run('/usr/bin/apt-get install ufw -y')
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to install ufw")
             for rule in ufw_rules:
@@ -245,12 +226,8 @@ def main():
             print "ufw is only compatible with 64-bit architectures or Debian based OS'"
 
     # Determine if geth version needs to be updated
-    if geth_versions['current'] == 'Unknown' or geth_versions['current'] < geth_versions['stable']:
-        if args.geth is None:
-            args.geth = 'stable'
-    elif geth_versions['current'] > geth_versions['stable'] and geth_versions['current'] != geth_versions['latest']:
-        if args.geth is None:
-            args.geth = 'latest'
+    if args.geth is None or geth_versions['current'] == geth_versions[args.geth]:
+        args.geth = utils.has_update(geth_versions)
 
     # Swap geth from stable <-> latest
     if args.interactive:
@@ -272,19 +249,20 @@ def main():
 
     # If auto-generated service file != on-disk service file, rewrite it
     # Load and render template
-    jinja2_env = Environment(loader=FileSystemLoader(utils.resource_path('templates')))
-    template = jinja2_env.get_template('akromanode.service.tmpl')
-    new_service_file = template.render(args=args, os_family=os_family)
-    if service_file != new_service_file:
-        utils.print_cmd('Creating/updating akromanode service file...')
-        f = '/etc/systemd/system/akromanode.service'
-        with open(f, 'w') as fd:
-            fd.write(new_service_file)
-            utils.check_perms(f, '0644')
-        ret, _ = utils.timed_run('/bin/systemctl daemon-reload')
-        if ret is None or int(ret) != 0:
-            raise Exception('ERROR: Failed to reload systemctl')
-        restart_service = True
+    if not args.update_only:
+        jinja2_env = Environment(loader=FileSystemLoader(utils.resource_path('templates')))
+        template = jinja2_env.get_template('akromanode.service.tmpl')
+        new_service_file = template.render(args=args, os_family=os_family)
+        if service_file != new_service_file:
+            utils.print_cmd('Creating/updating akromanode service file...')
+            f = '/etc/systemd/system/akromanode.service'
+            with open(f, 'w') as fd:
+                fd.write(new_service_file)
+                utils.check_perms(f, '0644')
+            ret, _ = utils.timed_run('/bin/systemctl daemon-reload')
+            if ret is None or int(ret) != 0:
+                raise Exception('ERROR: Failed to reload systemctl')
+            restart_service = True
 
     # Enable and restart akromanode if service or geth updates have been made
     if not utils.service_status('akromanode', 'is-active') or restart_service:
@@ -293,13 +271,19 @@ def main():
             utils.service_status('akromanode', status)
 
     # Enable auto-update and update scripts
+    if args.update_only:
+        utils.autoupdate_cron(os_family, remove=True)
+    else:
+        utils.autoupdate_cron(os_family)
+
     # Get current setup version, and those returned by API
     script_versions = api.get_script_versions(SCRIPTS_VERSIONS_URI, '/usr/sbin/akroma-mn-setup -v')
-    if script_versions['current'] != script_versions['stable']:
-        api.autoupdate_scripts(os_arch, script_versions['stable'], SCRIPTS_URI)
-        utils.print_cmd('Reloading Akroma Setup')
-        os.execv('/usr/sbin/akroma-mn-setup', sys.argv)
-    utils.autoupdate_cron(os_family)
+
+    # Determine if setup/utils version needs to be updated
+    if args.scripts is None or script_versions['current'] == script_versions[args.scripts]:
+        args.scripts = utils.has_update(script_versions)
+    if args.scripts:
+        api.autoupdate_scripts(os_arch, script_versions[args.scripts], SCRIPTS_URI)
 
     utils.print_cmd('Akroma MasterNode up-to-date...')
 

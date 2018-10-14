@@ -9,6 +9,7 @@ import random
 import re
 import readline
 import shlex
+import socket
 import sys
 import termios
 import tty
@@ -36,9 +37,9 @@ def autoupdate_cron(os_family, remove=False):
             cron.write()
             print_cmd('Enabling and starting cron service...')
             if os_family == 'RedHat':
-                ret, _ = timed_run('yum -d1 -y install cronie')
+                ret, _ = timed_run('/usr/bin/yum -d1 -y install cronie')
             else:
-                ret, _ = timed_run('apt-get install cron -y')
+                ret, _ = timed_run('/usr/bin/apt-get install cron -y')
             if ret is None or int(ret) != 0:
                 raise Exception("ERROR: Failed to install cron")
             service = 'cron' if os_family != 'RedHat' else 'crond'
@@ -57,6 +58,21 @@ def check_perms(filename, permissions, uid=0, gid=0):
             os.chown(filename, uid, gid)
     except OSError:
         raise Exception("ERROR: Failed to set ownership/permissions on %s" % filename)
+
+def check_socket(ip, port, timeout=5):
+    """
+    Check if an network IP/port socket is open
+    Return True if it's open, False otherwise.
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    try:
+        if not isinstance(port, (int)):
+            raise socket.error
+        ret = sock.connect((ip, port))
+        return True
+    except socket.error:
+        return False
 
 def execute(cmd, tmo=60, max_retries=1, wait_ms=0, \
             stdin_str=None, log=True, separate_stderr=True):
@@ -98,6 +114,29 @@ def execute(cmd, tmo=60, max_retries=1, wait_ms=0, \
 
         return p.returncode, out
     return _execute(cmd, tmo, stdin_str, log, separate_stderr)
+
+def get_enodeid(args):
+    """
+    Get enodeid of running geth process
+    """
+    try:
+        user_home = os.path.expanduser('~%s' % args.user)
+        ret, out, _ = timed_run('/usr/sbin/geth-akroma attach --datadir %s/.akroma/ --exec "admin.nodeInfo.id"' % user_home, separate_stderr=True)
+        if ret is None or int(ret) != 0:
+            raise ValueError
+    except ValueError:
+        return 'ERROR: Failed to read enode id'
+    return re.sub(r'"', '', out.rstrip())
+
+def has_update(versions):
+    """
+    Determine if an update is available comparing current, stable, and latest
+    """
+    if versions['current'] == 'Unknown' or versions['current'] < versions['stable']:
+        return 'stable'
+    elif versions['current'] > versions['stable'] and versions['current'] != versions['latest']:
+        return 'latest'
+    return None
 
 def input_bool(text, default):
     """
@@ -146,6 +185,16 @@ def isvalidrpcinfo(data):
     if re.match('^[a-zA-Z0-9]{3,15}$', data):
         return True
     return False
+
+def my_ip():
+    """
+    Get public ip address of server
+    TODO: Refactor into using requests/urllib3 AF_INET (not AF_INET6)
+    """
+    ret, out = timed_run('/usr/bin/curl --silent -4 icanhazip.com')
+    if ret is None or int(ret) != 0:
+        return 'ERROR: Failed to obtain node ip'
+    return out
 
 def os_detect():
     """
@@ -201,7 +250,7 @@ def parse_service_file(args):
     Parse akromanode.service, if it exists, and set/override defaults
     """
     # Set default args if undefined
-    for i in ('memory', 'rpcpassword', 'rpcport', 'port', 'rpcuser', 'user'):
+    for i in ('rpcpassword', 'rpcport', 'port', 'rpcuser', 'user'):
         if i not in args:
             setattr(args, i, None)
     for i in ('no_rpcuser', ):
@@ -217,10 +266,6 @@ def parse_service_file(args):
             if m:
                 if args.user is None:
                     args.user = m.group(1)
-            m = re.search(r'jemalloc', content)
-            if m:
-                if args.memory is None:
-                    args.memory = True
             m = re.search(r'--port\s+(\d+)', content)
             if m:
                 if args.port is None:
@@ -240,8 +285,6 @@ def parse_service_file(args):
     except IOError:
         pass
 
-    if args.memory is None:
-        args.memory = False
     if args.port is None:
         args.port = 30303
     if args.rpcport is None:

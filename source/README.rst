@@ -10,8 +10,12 @@ Features
 * TODO
 
 1. utils.check_perms check inside main loop
-2. Add setuid to $USER for scripts that make sense.  Not convinced about this feature
-3. Add fail2ban option
+2. utils.check_perms to check/change permissions only if exists
+3. Refactor __main__ (mostly done)
+4. Introduce rpcnode templates for service file and nginx
+5. Add fail2ban option
+6. Drop curl dependency and perform AF_INET request/urllib3
+7. Check akroma-mn-utils version as well to see if it's out-of-date
 
 Howto
 -----
@@ -21,17 +25,8 @@ Howto
    CentOS/RHEL requires the following to be installed prior to running:
 
     yum install epel-release
-    yum install gcc python2-devel python-pip python-setuptools upx
+    yum install gcc python2-dateutil python2-devel python2-distro python2-future python-jinja2 python2-pip python-retrying python-setuptools upx
 
-   -- or --
-
-   Debian/Ubuntu requires the following to be installed prior to running:
-
-    apt-get install gcc python-dev python-pip python-setuptools upx
-
-   For 32-bit, you may need to manually download pip from https://pypi.org/project/pip/
-
-   Also, upx may not be available for all 32-bit OS', causing binaries to be uncompressed
 
 2. Install python requirements::
 
@@ -45,6 +40,8 @@ Howto
 3. Submit new binaries to GH repo renamed as akroma-mn-setup.`uname -m` and akroma-mn-utils.`uname -m`
    Binaries will initially be named dist/akroma-mn-setup and dist/akroma-mn-utils
 
+   For 32-bit, you may need to manually download pip from https://pypi.org/project/pip/
+   Also, upx may not be available for all 32-bit OS', causing binaries to be uncompressed
 
 Known Issues
 ------------
